@@ -31,6 +31,8 @@
   "devDependencies": {
     "@types/jmespath": "^0.15.2",
     "@vitest/ui": "^4.0.15",
+    "tsup": "^8.5.1",
+    "typescript": "^5.4.0",
     "vitest": "^4.0.15"
   }
 }

@@ -1,4 +1,4 @@
-import jmespath from "jmespath";
+import * as jmespath from "jmespath";
 import type { SleekSiteContent, ClientOptions } from "./types";
 
 function isDevToken(token: string): boolean {
