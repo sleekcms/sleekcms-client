@@ -1,6 +1,6 @@
 {
   "name": "@sleekcms/client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
   "main": "dist/index.cjs",
