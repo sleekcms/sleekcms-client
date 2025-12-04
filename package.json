@@ -1,0 +1,35 @@
+{
+  "name": "@sleekcms/client",
+  "version": "0.1.0",
+  "description": "Official SleekCMS content client for Node 18+ and browser",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs",
+    "clean": "rimraf dist || true",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "jmespath": "^0.16.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sleekcms/sleekcms-client.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jmespath": "^0.15.2",
+    "@vitest/ui": "^4.0.15",
+    "vitest": "^4.0.15"
+  }
+}
