@@ -1,6 +1,6 @@
 {
   "name": "@sleekcms/client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
   "main": "dist/index.cjs",
@@ -17,7 +17,8 @@
     "build": "tsup src/index.ts --dts --format esm,cjs",
     "clean": "rimraf dist || true",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "jmespath": "^0.16.0"
