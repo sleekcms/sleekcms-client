@@ -5,13 +5,13 @@ Official JavaScript/TypeScript client library for [SleekCMS](https://sleekcms.co
 ## Installation
 
 ```bash
-npm install @sleekcms/client
+npm install sleekcms-client
 ```
 
 ## Quick Start
 
 ```typescript
-import { createClient } from '@sleekcms/client';
+import { createClient } from 'sleekcms-client';
 
 const client = createClient({
   siteToken: 'your-site-token',
@@ -32,7 +32,7 @@ const blogPosts = await client.findPages('/blog');
 The default client that fetches content on-demand. Ideal for server-side rendering and applications where you want fresh content on each request.
 
 ```typescript
-import { createClient } from '@sleekcms/client';
+import { createClient } from 'sleekcms-client';
 
 const client = createClient({
   siteToken: 'your-site-token',
@@ -47,7 +47,7 @@ const client = createClient({
 Prefetches all content once and provides synchronous methods. Perfect for static site generation and client-side applications.
 
 ```typescript
-import { createSyncClient } from '@sleekcms/client';
+import { createSyncClient } from 'sleekcms-client';
 
 // Note: createSyncClient is async, but returns a sync client
 const client = await createSyncClient({
@@ -220,7 +220,7 @@ All methods support optional JMESPath queries for powerful data filtering and tr
 ### Next.js (App Router)
 
 ```typescript
-import { createClient } from '@sleekcms/client';
+import { createClient } from 'sleekcms-client';
 
 export default async function BlogPage() {
   const client = createClient({
@@ -246,7 +246,7 @@ export default async function BlogPage() {
 ### Static Site Generation
 
 ```typescript
-import { createSyncClient } from '@sleekcms/client';
+import { createSyncClient } from 'sleekcms-client';
 
 // At build time
 const client = await createSyncClient({
@@ -264,7 +264,7 @@ const images = client.getImages();
 ### Browser Usage
 
 ```typescript
-import { createClient } from '@sleekcms/client';
+import { createClient } from 'sleekcms-client';
 
 const client = createClient({
   siteToken: 'your-public-token',
@@ -307,7 +307,7 @@ try {
 Fully typed with TypeScript. Import types for better IDE support:
 
 ```typescript
-import type { SleekSiteContent, ClientOptions } from '@sleekcms/client';
+import type { SleekSiteContent, ClientOptions } from 'sleekcms-client';
 
 // Type your content
 interface BlogPost {

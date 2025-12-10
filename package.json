@@ -1,21 +1,21 @@
 {
-  "name": "@sleekcms/client",
-  "version": "0.1.2",
+  "name": "sleekcms-client",
+  "version": "0.1.5",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs",
-    "clean": "rimraf dist || true",
+    "build": "npm run clean && tsup src/index.ts --dts --format esm,cjs --out-dir dist",
+    "clean": "rimraf dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
@@ -23,6 +23,10 @@
   "dependencies": {
     "jmespath": "^0.16.0"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/sleekcms/sleekcms-client.git"
@@ -31,6 +35,7 @@
   "devDependencies": {
     "@types/jmespath": "^0.15.2",
     "@vitest/ui": "^4.0.15",
+    "rimraf": "^5.0.5",
     "tsup": "^8.5.1",
     "typescript": "^5.4.0",
     "vitest": "^4.0.15"
