@@ -1,6 +1,6 @@
 {
   "name": "@sleekcms/client",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
   "main": "index.cjs",
@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "npm run clean && tsup src/index.ts --dts --format esm,cjs && cp README.md dist/ && cp .npmrc dist/ && jq '.private = false | .files = [\"index.cjs\", \"index.mjs\", \"index.d.ts\", \"index.d.cts\", \"README.md\"]' package.json > dist/package.json",
+    "build": "npm run clean && tsup && cp README.md dist/ && cp .npmrc dist/ && jq '.private = false | .files = [\"index.cjs\", \"index.mjs\", \"index.d.ts\", \"index.d.cts\", \"README.md\"]' package.json > dist/package.json",
     "clean": "rimraf dist || true",
     "test": "vitest run",
     "test:watch": "vitest",
