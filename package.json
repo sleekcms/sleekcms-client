@@ -1,24 +1,25 @@
 {
   "name": "@sleekcms/client",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "private": true,
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs",
+    "build": "npm run clean && tsup src/index.ts --dts --format esm,cjs && cp README.md dist/ && jq '.private = false' package.json > dist/package.json",
     "clean": "rimraf dist || true",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "publish:dist": "cd dist && npm publish"
   },
   "dependencies": {
     "jmespath": "^0.16.0"

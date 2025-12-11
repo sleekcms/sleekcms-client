@@ -17,4 +17,5 @@ export interface ClientOptions {
   env?: string;
   cache?: boolean;
   mock?: boolean;
+  resolveEnv?: boolean;
 }
