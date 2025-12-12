@@ -99,7 +99,7 @@ describe("SleekCMS Client", () => {
       expect(pages).toEqual(mockSiteContent.pages);
     });
 
-    it("should handle complex JMESPath queries with findPages", async () => {
+    it("should handle complex JMESPath queries with getPages", async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         json: async () => mockSiteContent
@@ -112,7 +112,7 @@ describe("SleekCMS Client", () => {
 
       await client.getContent(); // Load cache
 
-      const result = await client.findPages(
+      const result = await client.getPages(
         "/blog",
         "[?published == `true`].title"
       );
@@ -173,7 +173,7 @@ describe("SleekCMS Client", () => {
       expect(list).toEqual(mockSiteContent.lists!.categories);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-      const pages = await client.findPages("/blog");
+      const pages = await client.getPages("/blog");
       expect(pages).toHaveLength(2);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
@@ -316,11 +316,94 @@ describe("SleekCMS Client", () => {
       const images = client.getImages();
       expect(images).toEqual(mockSiteContent.images);
 
-      const pages = client.findPages("/blog");
+      const pages = client.getPages("/blog");
       expect(pages).toHaveLength(2);
 
       // Still only one fetch
       expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("getPage Method", () => {
+    it("should get a single page by exact path - async client", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "prod-site123",
+        cache: true
+      });
+
+      const page = await client.getPage("/about");
+      expect(page).toEqual({ _path: "/about", title: "About", published: true });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should throw error when page not found - async client", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "prod-site123",
+        cache: true
+      });
+
+      await expect(client.getPage("/nonexistent")).rejects.toThrow(
+        "[SleekCMS] Page not found: /nonexistent"
+      );
+    });
+
+    it("should get a single page by exact path - sync client", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = await createSyncClient({
+        siteToken: "prod-site123"
+      });
+
+      const page = client.getPage("/blog/post-1");
+      expect(page).toEqual({
+        _path: "/blog/post-1",
+        title: "Post 1",
+        published: true,
+        category: "tech"
+      });
+    });
+
+    it("should return null when page not found - sync client", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = await createSyncClient({
+        siteToken: "prod-site123"
+      });
+
+      const page = client.getPage("/nonexistent");
+      expect(page).toBeNull();
+    });
+
+    it("should throw error when path is empty", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "prod-site123",
+        cache: true
+      });
+
+      await expect(client.getPage("")).rejects.toThrow(
+        "[SleekCMS] path is required for getPage"
+      );
     });
   });
 

@@ -1,76 +1,44 @@
-import * as jmespath from "jmespath";
-import type { SleekSiteContent, ClientOptions } from "./types";
+import type { SleekSiteContent, ClientOptions, Page } from "./types";
+import { createFetchSiteContent, applyJmes } from "./lib";
 
-function isDevToken(token: string): boolean {
-  return token.startsWith("dev-");
-}
+export type { SleekSiteContent, ClientOptions };
 
-function getBaseUrl(token: string): string {
-  let [env, siteId, ...rest] = token.split("-");
-  return `https://${env}.sleekcms.com/${siteId}`;
+/**
+ * Helper function to extract slugs from pages matching a path prefix
+ */
+function extractSlugs(pages: SleekSiteContent["pages"], path: string): string[] {
+  const slugs: string[] = [];
+  const pagesList = pages ?? [];
+
+  for (const page of pagesList) {
+    const pth = typeof page._path === "string" ? page._path : "";
+    if (pth.startsWith(path) && "_slug" in page && typeof page._slug === "string") {
+      slugs.push(page._slug);
+    }
+  }
+
+  return slugs;
 }
 
 /**
- * Low-level fetch helper.
- * - If `searchQuery` is provided, it's sent as `?search=<JMESPath>`.
- * - If options.mock === true and token is dev-..., `mock=true` is added.
+ * Helper function to filter pages by path prefix
  */
-async function fetchSiteContent(
-  options: ClientOptions,
-  searchQuery?: string
-): Promise<any> {
-  const { siteToken, env = "latest", mock } = options;
-
-  if (!siteToken) {
-    throw new Error("[SleekCMS] siteToken is required");
-  }
-
-  const baseUrl = getBaseUrl(siteToken).replace(/\/$/, "");
-  const url = new URL(`${baseUrl}/${env}`);
-
-  if (searchQuery) {
-    url.searchParams.set("search", searchQuery);
-  }
-
-  if (mock && isDevToken(siteToken)) {
-    url.searchParams.set("mock", "true");
-  }
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: siteToken
-    }
+function filterPagesByPath(pages: SleekSiteContent["pages"], path: string): SleekSiteContent["pages"] {
+  const pagesList = pages ?? [];
+  return pagesList.filter((p) => {
+    const pth = typeof p._path === "string" ? p._path : "";
+    return pth.startsWith(path);
   });
-
-  if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const data = (await res.json()) as { message?: string };
-      if (data && data.message) message = data.message;
-    } catch {
-      // ignore
-    }
-    throw new Error(`[SleekCMS] Request failed (${res.status}): ${message}`);
-  }
-
-  return res.json();
 }
-
-function applyJmes<T = unknown>(data: unknown, query?: string): T {
-  if (!query) return data as T;
-  return jmespath.search(data, query) as T;
-}
-
-export type { SleekSiteContent, ClientOptions };
 
 /**
  * Async SleekCMS client: methods return Promises.
  */
 export interface SleekClient {
-  getContent<T = SleekSiteContent>(query?: string): Promise<T>;
-  findPages<T = unknown>(path: string, query?: string): Promise<T>;
+  getContent(query?: string): Promise<SleekSiteContent>;
+  getPages(path: string, query?: string): Promise<SleekSiteContent["pages"]>;
+  getPage(path: string): Promise<Page>;
+  getSlugs(path: string): Promise<string[]>;
   getImages(): Promise<SleekSiteContent["images"]>;
   getImage(name: string): Promise<unknown | undefined>;
   getList<T = unknown>(name: string): Promise<T[] | undefined>;
@@ -80,125 +48,86 @@ export interface SleekClient {
  * Sync client: prefetches full content once; subsequent calls are in-memory only.
  */
 export interface SleekSyncClient {
-  getContent<T = SleekSiteContent>(query?: string): T;
-  findPages<T = unknown>(path: string, query?: string): T;
+  getContent(query?: string): SleekSiteContent;
+  getPages(path: string, query?: string): SleekSiteContent["pages"];
+  getPage(path: string): Page | null;
+  getSlugs(path: string): string[];
   getImages(): SleekSiteContent["images"];
   getImage(name: string): unknown | undefined;
   getList<T = unknown>(name: string): T[] | undefined;
 }
 
 export function createClient(options: ClientOptions): SleekClient {
-  const dev = isDevToken(options.siteToken);
+  const fetchSiteContent = createFetchSiteContent(options);
 
-  let cacheMode = !!options.cache || (!!options.mock && dev);
-  let cachedContent: SleekSiteContent | null = null;
-
-  async function ensureCacheLoaded(): Promise<SleekSiteContent> {
-    if (cachedContent) return cachedContent;
-    const data = (await fetchSiteContent(options)) as SleekSiteContent;
-    cachedContent = data;
-    return data;
+  async function getContent(query?: string): Promise<SleekSiteContent> {
+    return (await fetchSiteContent(query)) as SleekSiteContent;
   }
 
-  async function getContent<T = SleekSiteContent>(query?: string): Promise<T> {
-    if (cacheMode) {
-      const data = await ensureCacheLoaded();
-      return applyJmes<T>(data, query);
-    }
-
-    if (!query) {
-      const data = (await fetchSiteContent(options)) as SleekSiteContent;
-      cachedContent = data;
-      cacheMode = true;
-      return data as T;
-    }
-
-    const data = await fetchSiteContent(options, query);
-    return data as T;
-  }
-
-  async function findPages<T = unknown>(
-    path: string,
-    query?: string
-  ): Promise<T> {
+  async function getPages(path: string, query?: string): Promise<SleekSiteContent["pages"]> {
     if (!path) {
-      throw new Error("[SleekCMS] path is required for findPages");
+      throw new Error("[SleekCMS] path is required for getPages");
     }
 
-    if (cacheMode) {
-      const data = await ensureCacheLoaded();
-      const pages = data.pages ?? [];
-      const filtered = pages.filter((p) => {
-        const pth = typeof p._path === "string" ? p._path : "";
-        return pth.startsWith(path);
-      });
-      return applyJmes<T>(filtered, query);
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    const filtered = filterPagesByPath(data.pages, path);
+    return applyJmes(filtered, query);
+  }
+
+  async function getPage(path: string): Promise<Page> {
+    if (!path) {
+      throw new Error("[SleekCMS] path is required for getPage");
     }
 
-    const pages = (await fetchSiteContent(
-      options,
-      "pages"
-    )) as SleekSiteContent["pages"];
-
-    const filtered = (pages ?? []).filter((p) => {
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    const pages = data.pages ?? [];
+    const page = pages.find((p) => {
       const pth = typeof p._path === "string" ? p._path : "";
-      return pth.startsWith(path);
+      return pth === path;
     });
 
-    return applyJmes<T>(filtered, query);
+    if (!page) {
+      throw new Error(`[SleekCMS] Page not found: ${path}`);
+    }
+
+    return page;
+  }
+
+  async function getSlugs(path: string): Promise<string[]> {
+    if (!path) {
+      throw new Error("[SleekCMS] path is required for getSlugs");
+    }
+
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    return extractSlugs(data.pages, path);
   }
 
   async function getImages(): Promise<SleekSiteContent["images"]> {
-    if (cacheMode) {
-      const data = await ensureCacheLoaded();
-      return data.images ?? {};
-    }
-
-    const images = (await fetchSiteContent(
-      options,
-      "images"
-    )) as SleekSiteContent["images"];
-    return images ?? {};
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    return data.images ?? {};
   }
 
   async function getImage(name: string): Promise<unknown | undefined> {
     if (!name) return undefined;
-
-    if (cacheMode) {
-      const data = await ensureCacheLoaded();
-      return data.images ? data.images[name] : undefined;
-    }
-
-    const images = (await fetchSiteContent(
-      options,
-      "images"
-    )) as SleekSiteContent["images"];
-    return images ? images[name] : undefined;
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    return data.images ? data.images[name] : undefined;
   }
 
   async function getList<T = unknown>(
     name: string
   ): Promise<T[] | undefined> {
     if (!name) return undefined;
-
-    if (cacheMode) {
-      const data = await ensureCacheLoaded();
-      const lists = data.lists ?? {};
-      const list = lists[name];
-      return Array.isArray(list) ? (list as T[]) : undefined;
-    }
-
-    const lists = (await fetchSiteContent(
-      options,
-      "lists"
-    )) as SleekSiteContent["lists"];
-    const list = lists ? lists[name] : undefined;
+    const data = (await fetchSiteContent()) as SleekSiteContent;
+    const lists = data.lists ?? {};
+    const list = lists[name];
     return Array.isArray(list) ? (list as T[]) : undefined;
   }
 
   return {
     getContent,
-    findPages,
+    getPages,
+    getPage,
+    getSlugs,
     getImages,
     getImage,
     getList
@@ -211,27 +140,43 @@ export function createClient(options: ClientOptions): SleekClient {
  * - Prefetches full content once (no search=).
  * - All operations (including JMESPath) are local and synchronous.
  */
-export async function createSyncClient(
-  options: ClientOptions
-): Promise<SleekSyncClient> {
-  const data = (await fetchSiteContent(options)) as SleekSiteContent;
+export async function createSyncClient(options: ClientOptions): Promise<SleekSyncClient> {
+  const fetchSiteContent = createFetchSiteContent(options);
+  const data = (await fetchSiteContent()) as SleekSiteContent;
 
-  function getContent<T = SleekSiteContent>(query?: string): T {
-    return applyJmes<T>(data, query);
+  function getContent(query?: string): SleekSiteContent {
+    return applyJmes(data, query);
   }
 
-  function findPages<T = unknown>(path: string, query?: string): T {
+  function getPages(path: string, query?: string): SleekSiteContent["pages"] {
     if (!path) {
-      throw new Error("[SleekCMS] path is required for findPages");
+      throw new Error("[SleekCMS] path is required for getPages");
+    }
+
+    const filtered = filterPagesByPath(data.pages, path);
+    return applyJmes(filtered, query);
+  }
+
+  function getPage(path: string): Page | null {
+    if (!path) {
+      throw new Error("[SleekCMS] path is required for getPage");
     }
 
     const pages = data.pages ?? [];
-    const filtered = pages.filter((p) => {
+    const page = pages.find((p) => {
       const pth = typeof p._path === "string" ? p._path : "";
-      return pth.startsWith(path);
+      return pth === path;
     });
 
-    return applyJmes<T>(filtered, query);
+    return page ?? null;
+  }
+
+  function getSlugs(path: string): string[] {
+    if (!path) {
+      throw new Error("[SleekCMS] path is required for getSlugs");
+    }
+
+    return extractSlugs(data.pages, path);
   }
 
   function getImages(): SleekSiteContent["images"] {
@@ -252,7 +197,9 @@ export async function createSyncClient(
 
   return {
     getContent,
-    findPages,
+    getPages,
+    getPage,
+    getSlugs,
     getImages,
     getImage,
     getList

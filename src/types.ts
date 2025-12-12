@@ -1,6 +1,6 @@
 
 type Entry = Record<string, unknown>;
-type Page = { _path: string; [key: string]: unknown };
+export type Page = { _path: string; [key: string]: unknown };
 type Image = { url: string; [key: string]: unknown };
 type List = Array<{ label: string; value: string }>;
 

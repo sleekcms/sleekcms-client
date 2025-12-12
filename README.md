@@ -22,7 +22,7 @@ const client = createClient({
 const content = await client.getContent();
 
 // Get specific pages
-const blogPosts = await client.findPages('/blog');
+const blogPosts = await client.getPages('/blog');
 ```
 
 ## Client Types
@@ -96,30 +96,60 @@ const homePage = await client.getContent('pages[?_path == `/`] | [0]');
 const siteTitle = await client.getContent<string>('config.title');
 ```
 
-### `findPages<T>(path, query?)`
+### `getPages(path, query?)`
 
-Find pages that start with the specified path.
+Get pages that start with the specified path.
 
 **Parameters:**
 - `path` (required): Path prefix to filter pages (e.g., `/blog`, `/products`)
 - `query` (optional): JMESPath query to further filter results
 
-**Returns:** `Promise<T>` (async) or `T` (sync)
+**Returns:** `Promise<SleekSiteContent["pages"]>` (async) or `SleekSiteContent["pages"]` (sync)
 
 **Examples:**
 
 ```typescript
 // Get all blog posts
-const blogPosts = await client.findPages('/blog');
+const blogPosts = await client.getPages('/blog');
 
 // Get blog posts with custom query
-const publishedPosts = await client.findPages(
+const publishedPosts = await client.getPages(
   '/blog',
   '[?published == `true`]'
 );
 
 // Get post titles only
-const titles = await client.findPages('/blog', '[].title');
+const titles = await client.getPages('/blog', '[].title');
+```
+
+### `getPage(path)`
+
+Get a single page by its exact path.
+
+**Parameters:**
+- `path` (required): Exact page path (e.g., `/blog/my-post`, `/about`)
+
+**Returns:** `Promise<Page>` (async) or `Page | null` (sync)
+
+**Note:** Async client throws an error if page is not found. Sync client returns `null`.
+
+**Examples:**
+
+```typescript
+// Async client - throws if not found
+try {
+  const aboutPage = await client.getPage('/about');
+  console.log(aboutPage.title);
+} catch (error) {
+  console.error('Page not found');
+}
+
+// Sync client - returns null if not found
+const syncClient = await createSyncClient({ siteToken: '...' });
+const aboutPage = syncClient.getPage('/about');
+if (aboutPage) {
+  console.log(aboutPage.title);
+}
 ```
 
 ### `getImages()`
@@ -165,6 +195,27 @@ Retrieve a specific list (e.g., dropdown options, categories).
 ```typescript
 const categories = await client.getList('categories');
 // [{ label: "Technology", value: "tech" }, ...]
+```
+
+### `getSlugs(path)`
+
+Get an array of slugs from pages that start with the specified path. Only includes pages that have a `_slug` property.
+
+**Parameters:**
+- `path` (required): Path prefix to filter pages (e.g., `/blog`, `/products`)
+
+**Returns:** `Promise<string[]>` (async) or `string[]` (sync)
+
+**Example:**
+
+```typescript
+// Get all blog post slugs
+const slugs = await client.getSlugs('/blog');
+// ["my-first-post", "second-post", "latest-update"]
+
+// Useful for generating static paths in Next.js
+const productSlugs = await client.getSlugs('/products');
+// ["laptop", "keyboard", "mouse"]
 ```
 
 ## Content Structure
@@ -228,7 +279,7 @@ export default async function BlogPage() {
     env: 'published',
   });
 
-  const posts = await client.findPages('/blog');
+  const posts = await client.getPages('/blog');
 
   return (
     <div>
@@ -255,10 +306,94 @@ const client = await createSyncClient({
 });
 
 // Generate static pages
-const pages = client.findPages('/');
+const pages = client.getPages('/');
 const images = client.getImages();
 
 // All subsequent calls are synchronous and instant
+```
+
+### Next.js Static Params (generateStaticParams)
+
+Use `getSlugs()` to generate static paths for dynamic routes in Next.js:
+
+```typescript
+// app/blog/[slug]/page.tsx
+import { createClient } from '@sleekcms/client';
+
+// Generate static paths at build time
+export async function generateStaticParams() {
+  const client = createClient({
+    siteToken: process.env.SLEEKCMS_TOKEN!,
+    env: 'published',
+  });
+
+  const slugs = await client.getSlugs('/blog');
+
+  return slugs.map((slug) => ({
+    slug: slug,
+  }));
+}
+
+// Render the page
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  const client = createClient({
+    siteToken: process.env.SLEEKCMS_TOKEN!,
+    env: 'published',
+  });
+
+  const post = await client.getPage(`/blog/${params.slug}`);
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <div>{post.content}</div>
+    </article>
+  );
+}
+```
+
+**Pages Router Example:**
+
+```typescript
+// pages/blog/[slug].tsx
+import { createClient } from '@sleekcms/client';
+import type { GetStaticPaths, GetStaticProps } from 'next';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const client = createClient({
+    siteToken: process.env.SLEEKCMS_TOKEN!,
+    env: 'published',
+  });
+
+  const slugs = await client.getSlugs('/blog');
+
+  return {
+    paths: slugs.map((slug) => ({ params: { slug } })),
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const client = createClient({
+    siteToken: process.env.SLEEKCMS_TOKEN!,
+    env: 'published',
+  });
+
+  const post = await client.getPage(`/blog/${params!.slug}`);
+
+  return {
+    props: { post },
+  };
+};
+
+export default function BlogPost({ post }: any) {
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <div>{post.content}</div>
+    </article>
+  );
+}
 ```
 
 ### Browser Usage
@@ -316,7 +451,10 @@ interface BlogPost {
   _path: string;
 }
 
-const posts = await client.findPages<BlogPost[]>('/blog');
+const posts = await client.getPages('/blog');
+
+// Get a single page with error handling
+const aboutPage = await client.getPage('/about');
 ```
 
 ## License
