@@ -407,6 +407,93 @@ describe("SleekCMS Client", () => {
     });
   });
 
+  describe("devEnv Client Option", () => {
+    it("should use production URL when devEnv is 'production'", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "dev-site123",
+        devEnv: "production"
+      });
+
+      await client.getContent();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const calledUrl = fetchSpy.mock.calls[0][0];
+      expect(calledUrl).toContain("sleekcms.com");
+      expect(calledUrl).toContain("dev.sleekcms.com/site123");
+    });
+
+    it("should use development URL when devEnv is 'development'", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "dev-site123",
+        devEnv: "development"
+      });
+
+      await client.getContent();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const calledUrl = fetchSpy.mock.calls[0][0];
+      expect(calledUrl).toContain("sleekcms.net");
+      expect(calledUrl).toContain("dev.sleekcms.net/site123");
+    });
+
+    it("should use localhost URL when devEnv is 'localhost'", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "dev-site123",
+        devEnv: "localhost"
+      });
+
+      await client.getContent();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const calledUrl = fetchSpy.mock.calls[0][0];
+      expect(calledUrl).toContain("localhost:9001");
+      expect(calledUrl).toContain("localhost:9001/dev/site123");
+    });
+
+    it("should default to production URL when devEnv is not specified", async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSiteContent
+      });
+
+      const client = createClient({
+        siteToken: "dev-site123"
+      });
+
+      await client.getContent();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const calledUrl = fetchSpy.mock.calls[0][0];
+      expect(calledUrl).toContain("sleekcms.com");
+    });
+
+    it("should throw error when devEnv is invalid", async () => {
+      const client = createClient({
+        siteToken: "dev-site123",
+        devEnv: "invalid" as any
+      });
+
+      await expect(client.getContent()).rejects.toThrow(
+        "[SleekCMS] Unknown devEnv: invalid"
+      );
+    });
+  });
+
   describe("Error Handling", () => {
     it("should throw error when siteToken is missing", async () => {
       const client = createClient({

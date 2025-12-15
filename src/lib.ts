@@ -5,9 +5,12 @@ function isDevToken(token: string): boolean {
   return token.startsWith("dev-");
 }
 
-function getBaseUrl(token: string): string {
+function getBaseUrl(token: string, devEnv: string): string {
   let [env, siteId, ...rest] = token.split("-");
-  return `https://${env}.sleekcms.com/${siteId}`;
+  if (devEnv === "production") return `https://${env}.sleekcms.com/${siteId}`;
+  else if (devEnv === "development") return `https://${env}.sleekcms.net/${siteId}`;
+  else if (devEnv === "localhost") return `http://localhost:9001/${env}/${siteId}`;
+  else throw new Error(`[SleekCMS] Unknown devEnv: ${devEnv}`);
 }
 
 export function applyJmes(data: unknown, query?: string): any {
@@ -22,7 +25,7 @@ export function applyJmes(data: unknown, query?: string): any {
  * - If not cached and searchQuery is provided, uses API search (unless cache mode is enabled).
  */
 export function createFetchSiteContent(options: ClientOptions) {
-  const { siteToken, env = "latest", mock } = options;
+  const { siteToken, env = "latest", mock, devEnv = "production" } = options;
   const dev = isDevToken(siteToken);
   let cacheMode = !!options.cache || (!!mock && dev);
   
@@ -39,7 +42,7 @@ export function createFetchSiteContent(options: ClientOptions) {
     }
 
     // Build the API URL
-    const baseUrl = getBaseUrl(siteToken).replace(/\/$/, "");
+    const baseUrl = getBaseUrl(siteToken, devEnv).replace(/\/$/, "");
     const url = new URL(`${baseUrl}/${env}`);
 
     // If no cache and we have a search query, use API search
