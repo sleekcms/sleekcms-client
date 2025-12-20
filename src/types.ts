@@ -1,11 +1,13 @@
 
-type Entry = Record<string, unknown>;
+export type Entry = Record<string, unknown>;
 export type Page = { _path: string; [key: string]: unknown };
-type Image = { url: string; [key: string]: unknown };
-type List = Array<{ label: string; value: string }>;
+export type Image = { url: string; [key: string]: unknown };
+export type List = Array<{ label: string; value: string }>;
 
 export interface SleekSiteContent {
-  entries?: Record<string, Entry> | Record<string, Entry[]>;
+  entries?: {
+    [handle: string]: Entry | Entry[];
+  };
   pages?: Array<Page>;
   images?: Record<string, Image>;
   lists?: Record<string, List>;
@@ -14,9 +16,27 @@ export interface SleekSiteContent {
 
 export interface ClientOptions {
   siteToken: string;
-  env?: string;
-  cache?: boolean;
-  mock?: boolean;
-  resolveEnv?: boolean;
-  devEnv?: string;
+  env?: string; // site env / alias
+  cdn?: boolean;
+  lang?: string;
+}
+
+export interface SleekClient {
+  getContent(query?: string): SleekSiteContent;
+  getPages(path: string): SleekSiteContent["pages"];
+  getPage(path: string): Page | null;
+  getEntry(handle: string): Entry | Entry[] | null;
+  getSlugs(path: string): string[];
+  getImage(name: string): Image | null;
+  getList(name: string): List | null;
+}
+
+export interface SleekAsyncClient {
+  getContent(query?: string): Promise<SleekSiteContent>;
+  getPages(path: string): Promise<SleekSiteContent["pages"]>;
+  getPage(path: string): Promise<Page | null>;
+  getEntry(handle: string): Promise<Entry | Entry[] | null>;
+  getSlugs(path: string): Promise<string[]>;
+  getImage(name: string): Promise<Image | null>;
+  getList(name: string): Promise<List | null>;
 }

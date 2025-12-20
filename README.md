@@ -1,6 +1,6 @@
 # SleekCMS Client
 
-Official JavaScript/TypeScript client library for [SleekCMS](https://sleekcms.com) - a modern headless CMS.
+Official JavaScript/TypeScript client for [SleekCMS](https://sleekcms.com) - a headless CMS that lets you manage content and deliver it via API.
 
 ## Installation
 
@@ -13,280 +13,176 @@ npm install @sleekcms/client
 ```typescript
 import { createClient } from '@sleekcms/client';
 
-const client = createClient({
+const client = await createClient({
   siteToken: 'your-site-token',
-  env: 'latest', // optional: default 'latest'. Ignored for dev- tokens
+  env: 'latest'
 });
 
-// Fetch all content
-const content = await client.getContent();
+// Get a page
+const page = client.getPage('/about');
 
-// Get specific pages
-const blogPosts = await client.getPages('/blog');
+// Get all blog posts
+const posts = client.getPages('/blog');
+
+// Get an entry
+const footer = client.getEntry('footer');
 ```
 
-## Client Types
+## Sync vs Async Clients
 
-### Async Client (Recommended)
+### Sync Client (Recommended for SSG)
 
-The default client that fetches content on-demand. Ideal for server-side rendering and applications where you want fresh content on each request.
+**`createClient()`** fetches all content upfront and returns a client with synchronous methods. Best for static site generation where you build once and want instant access to content.
 
 ```typescript
-import { createClient } from '@sleekcms/client';
-
-const client = createClient({
-  siteToken: 'your-site-token',
-  env: 'latest',
-  cache: false, // optional: enable in-memory caching
-  mock: false,  // optional: use mock data (dev tokens only)
+// Async initialization, sync usage
+const client = await createClient({
+  siteToken: 'your-site-token'
 });
+
+// All methods return data immediately (no await)
+const page = client.getPage('/pricing');
+const slugs = client.getSlugs('/blog');
 ```
 
-### Sync Client
+**Use when:**
+- Building static sites (Next.js SSG, Astro, 11ty)
+- You need all content at build time
+- You want predictable performance
 
-Prefetches all content once and provides synchronous methods. Perfect for static site generation and client-side applications.
+### Async Client (Recommended for SSR)
+
+**`createAsyncClient()`** fetches content on-demand. Best for server-side rendering where you want fresh content per request without loading everything.
 
 ```typescript
-import { createSyncClient } from '@sleekcms/client';
-
-// Note: createSyncClient is async, but returns a sync client
-const client = await createSyncClient({
+const client = createAsyncClient({
   siteToken: 'your-site-token',
-  env: 'latest',
+  cdn: true  // optional: cache-friendly URLs
 });
 
-// All methods are now synchronous
-const content = client.getContent();
-const images = client.getImages();
+// All methods are async
+const page = await client.getPage('/pricing');
+const posts = await client.getPages('/blog');
 ```
 
-## Configuration Options
+**Use when:**
+- Server-side rendering (Next.js SSR, SvelteKit, Remix)
+- You only need specific content per request
+- You want the latest content on each request
+
+## Configuration
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `siteToken` | `string` | *required* | Your SleekCMS site token |
-| `env` | `string` | `'latest'` | Environment: default is `'latest'`. Ignored for dev- tokens
-| `cache` | `boolean` | `false` | Enable in-memory caching for async client |
-| `mock` | `boolean` | `false` | Use mock data (only works with dev tokens) |
+| `siteToken` | `string` | required | Your site token from SleekCMS |
+| `env` | `string` | `'latest'` | Environment/alias name |
+| `cdn` | `boolean` | `false` | Resolve env name to bypass CDN cache. Adds latency. |
+| `lang` | `string` | - | Language code for internationalized content (e.g., `'en'`, `'es'`, `'fr'`) |
 
-## API Methods
-
-### `getContent<T>(query?)`
-
-Fetch the entire site content or filter it using a JMESPath query.
-
-**Parameters:**
-- `query` (optional): JMESPath query string to filter/transform content
-
-**Returns:** `Promise<T>` (async) or `T` (sync)
-
-**Examples:**
+**Internationalization Example:**
 
 ```typescript
-// Get all content
-const content = await client.getContent();
+// Fetch Spanish content
+const client = await createClient({
+  siteToken: 'your-site-token',
+  lang: 'es'
+});
 
-// Get only pages
-const pages = await client.getContent('pages');
-
-// Get specific page by path
-const homePage = await client.getContent('pages[?_path == `/`] | [0]');
-
-// Get config title
-const siteTitle = await client.getContent<string>('config.title');
+const page = client.getPage('/about');
+// Returns Spanish version of the page
 ```
 
-### `getPages(path, query?)`
+## API Reference
 
-Get pages that start with the specified path.
+### `getContent(search?)`
 
-**Parameters:**
-- `path` (required): Path prefix to filter pages (e.g., `/blog`, `/products`)
-- `query` (optional): JMESPath query to further filter results
-
-**Returns:** `Promise<SleekSiteContent["pages"]>` (async) or `SleekSiteContent["pages"]` (sync)
-
-**Examples:**
+Get all content or use a [JMESPath](https://jmespath.org/) search/query to filter it.
 
 ```typescript
-// Get all blog posts
-const blogPosts = await client.getPages('/blog');
+// Get everything
+const content = client.getContent();
 
-// Get blog posts with custom query
-const publishedPosts = await client.getPages(
-  '/blog',
-  '[?published == `true`]'
-);
+// Get only pages using JMESPath
+const pages = client.getContent('pages');
 
-// Get post titles only
-const titles = await client.getPages('/blog', '[].title');
+// Get config title
+const title = client.getContent('config.title');
+```
+
+### `getPages(path)`
+
+Get all pages that start with a specific path.
+
+```typescript
+const posts = client.getPages('/blog');
+const products = client.getPages('/shop/products');
 ```
 
 ### `getPage(path)`
 
-Get a single page by its exact path.
-
-**Parameters:**
-- `path` (required): Exact page path (e.g., `/blog/my-post`, `/about`)
-
-**Returns:** `Promise<Page>` (async) or `Page | null` (sync)
-
-**Note:** Async client throws an error if page is not found. Sync client returns `null`.
-
-**Examples:**
+Get a single page by exact path. Returns `null` if not found.
 
 ```typescript
-// Async client - throws if not found
-try {
-  const aboutPage = await client.getPage('/about');
-  console.log(aboutPage.title);
-} catch (error) {
-  console.error('Page not found');
-}
-
-// Sync client - returns null if not found
-const syncClient = await createSyncClient({ siteToken: '...' });
-const aboutPage = syncClient.getPage('/about');
-if (aboutPage) {
-  console.log(aboutPage.title);
-}
+const about = client.getPage('/about');
+const post = client.getPage('/blog/hello-world');
 ```
 
-### `getImages()`
+### `getEntry(handle)`
 
-Retrieve all images from the CMS.
-
-**Returns:** `Promise<Record<string, Image>>` (async) or `Record<string, Image>` (sync)
-
-**Example:**
+Get an entry by handle. Entries can be single objects or arrays.
 
 ```typescript
-const images = await client.getImages();
-// { "logo": { url: "https://...", ... }, ... }
-```
-
-### `getImage(name)`
-
-Get a specific image by name.
-
-**Parameters:**
-- `name` (required): Image name/key
-
-**Returns:** `Promise<Image | undefined>` (async) or `Image | undefined` (sync)
-
-**Example:**
-
-```typescript
-const logo = await client.getImage('logo');
-// { url: "https://...", width: 200, height: 100, ... }
-```
-
-### `getList<T>(name)`
-
-Retrieve a specific list (e.g., dropdown options, categories).
-
-**Parameters:**
-- `name` (required): List name
-
-**Returns:** `Promise<T[] | undefined>` (async) or `T[] | undefined` (sync)
-
-**Example:**
-
-```typescript
-const categories = await client.getList('categories');
-// [{ label: "Technology", value: "tech" }, ...]
+const header = client.getEntry('header');
+const team = client.getEntry('team-members'); // could be an array
 ```
 
 ### `getSlugs(path)`
 
-Get an array of slugs from pages that start with the specified path. Only includes pages that have a `_slug` property.
-
-**Parameters:**
-- `path` (required): Path prefix to filter pages (e.g., `/blog`, `/products`)
-
-**Returns:** `Promise<string[]>` (async) or `string[]` (sync)
-
-**Example:**
+Extract slugs from pages under a path. Useful for static site generation.
 
 ```typescript
-// Get all blog post slugs
-const slugs = await client.getSlugs('/blog');
-// ["my-first-post", "second-post", "latest-update"]
-
-// Useful for generating static paths in Next.js
-const productSlugs = await client.getSlugs('/products');
-// ["laptop", "keyboard", "mouse"]
+const slugs = client.getSlugs('/blog');
+// ['hello-world', 'nextjs-tips', 'typescript-guide']
 ```
 
-## Content Structure
+### `getImage(name)`
 
-The SleekCMS content has the following structure:
+Get an image by name.
 
 ```typescript
-interface SleekSiteContent {
-  entries?: Record<string, Entry> | Record<string, Entry[]>;
-  pages?: Array<{
-    _path: string;
-    [key: string]: unknown;
-  }>;
-  images?: Record<string, {
-    url: string;
-    [key: string]: unknown;
-  }>;
-  lists?: Record<string, Array<{
-    label: string;
-    value: string;
-  }>>;
-  config?: {
-    title?: string;
-  };
-}
+const logo = client.getImage('logo');
+// { url: 'https://...', alt: '...', ... }
 ```
 
-## JMESPath Queries
+### `getList(name)`
 
-All methods support optional JMESPath queries for powerful data filtering and transformation. Learn more at [JMESPath.org](https://jmespath.org/).
-
-**Common patterns:**
+Get a list (array of label/value pairs).
 
 ```typescript
-// Filter array
-'pages[?published == `true`]'
-
-// Get first item
-'pages[0]'
-
-// Project specific fields
-'pages[].{title: title, path: _path}'
-
-// Sort results
-'sort_by(pages, &date)'
-
-// Nested queries
-'pages[?category == `blog`].{title: title, image: images.hero.url}'
+const categories = client.getList('categories');
+// [{ label: 'Tech', value: 'tech' }, ...]
 ```
 
-## Usage Examples
+## Framework Examples
 
-### Next.js (App Router)
+### Next.js App Router (SSG)
 
 ```typescript
+// app/blog/page.tsx
 import { createClient } from '@sleekcms/client';
 
 export default async function BlogPage() {
-  const client = createClient({
-    siteToken: process.env.SLEEKCMS_TOKEN!,
-    env: 'published',
+  const client = await createClient({
+    siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
-  const posts = await client.getPages('/blog');
+  const posts = client.getPages('/blog');
 
   return (
     <div>
-      {posts.map((post: any) => (
+      {posts?.map((post) => (
         <article key={post._path}>
           <h2>{post.title}</h2>
-          <p>{post.excerpt}</p>
         </article>
       ))}
     </div>
@@ -294,175 +190,88 @@ export default async function BlogPage() {
 }
 ```
 
-### Static Site Generation
-
-```typescript
-import { createSyncClient } from '@sleekcms/client';
-
-// At build time
-const client = await createSyncClient({
-  siteToken: process.env.SLEEKCMS_TOKEN!,
-  env: 'published',
-});
-
-// Generate static pages
-const pages = client.getPages('/');
-const images = client.getImages();
-
-// All subsequent calls are synchronous and instant
-```
-
-### Next.js Static Params (generateStaticParams)
-
-Use `getSlugs()` to generate static paths for dynamic routes in Next.js:
+### Generate Static Paths
 
 ```typescript
 // app/blog/[slug]/page.tsx
 import { createClient } from '@sleekcms/client';
 
-// Generate static paths at build time
 export async function generateStaticParams() {
-  const client = createClient({
-    siteToken: process.env.SLEEKCMS_TOKEN!,
-    env: 'published',
+  const client = await createClient({
+    siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
-  const slugs = await client.getSlugs('/blog');
+  const slugs = client.getSlugs('/blog');
 
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
+  return slugs.map((slug) => ({ slug }));
 }
 
-// Render the page
-export default async function BlogPost({ params }: { params: { slug: string } }) {
-  const client = createClient({
-    siteToken: process.env.SLEEKCMS_TOKEN!,
-    env: 'published',
+export default async function Post({ params }: { params: { slug: string } }) {
+  const client = await createClient({
+    siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
-  const post = await client.getPage(`/blog/${params.slug}`);
+  const post = client.getPage(`/blog/${params.slug}`);
 
-  return (
-    <article>
-      <h1>{post.title}</h1>
-      <div>{post.content}</div>
-    </article>
-  );
+  return <h1>{post?.title}</h1>;
 }
 ```
 
-**Pages Router Example:**
+### SvelteKit (SSR)
 
 ```typescript
-// pages/blog/[slug].tsx
-import { createClient } from '@sleekcms/client';
-import type { GetStaticPaths, GetStaticProps } from 'next';
+// +page.server.ts
+import { createAsyncClient } from '@sleekcms/client';
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const client = createClient({
-    siteToken: process.env.SLEEKCMS_TOKEN!,
-    env: 'published',
-  });
-
-  const slugs = await client.getSlugs('/blog');
-
-  return {
-    paths: slugs.map((slug) => ({ params: { slug } })),
-    fallback: false,
-  };
-};
-
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const client = createClient({
-    siteToken: process.env.SLEEKCMS_TOKEN!,
-    env: 'published',
-  });
-
-  const post = await client.getPage(`/blog/${params!.slug}`);
-
-  return {
-    props: { post },
-  };
-};
-
-export default function BlogPost({ post }: any) {
-  return (
-    <article>
-      <h1>{post.title}</h1>
-      <div>{post.content}</div>
-    </article>
-  );
-}
-```
-
-### Browser Usage
-
-```typescript
-import { createClient } from '@sleekcms/client';
-
-const client = createClient({
-  siteToken: 'your-public-token',
-  cache: true, // Enable caching for better performance
+const client = createAsyncClient({
+  siteToken: process.env.SLEEKCMS_SITE_TOKEN,
+  cdn: true
 });
 
-// Fetch data on mount
-async function loadContent() {
-  const content = await client.getContent();
-  // Subsequent calls will use cache
+export async function load() {
+  const posts = await client.getPages('/blog');
+  return { posts };
 }
 ```
 
-## Caching Behavior
+### Astro
 
-### Async Client
-- By default, each call fetches fresh data
-- Set `cache: true` to enable in-memory caching
-- First call fetches data, subsequent calls use cache
-- When using `mock: true` with dev tokens, caching is automatic
+```astro
+---
+// src/pages/blog/index.astro
+import { createClient } from '@sleekcms/client';
 
-### Sync Client
-- Always caches content on initialization
-- All methods are synchronous and use cached data
-- No network requests after initial fetch
+const client = await createClient({
+  siteToken: import.meta.env.SLEEKCMS_SITE_TOKEN
+});
 
-## Error Handling
+const posts = client.getPages('/blog');
+---
 
-```typescript
-try {
-  const content = await client.getContent();
-} catch (error) {
-  // Error format: [SleekCMS] <message>
-  console.error(error.message);
-}
+<div>
+  {posts?.map((post) => (
+    <article>
+      <h2>{post.title}</h2>
+    </article>
+  ))}
+</div>
 ```
 
-## TypeScript Support
+## TypeScript
 
-Fully typed with TypeScript. Import types for better IDE support:
+The client is fully typed:
 
 ```typescript
-import type { SleekSiteContent, ClientOptions } from '@sleekcms/client';
-
-// Type your content
-interface BlogPost {
-  title: string;
-  excerpt: string;
-  _path: string;
-}
-
-const posts = await client.getPages('/blog');
-
-// Get a single page with error handling
-const aboutPage = await client.getPage('/about');
+import type { 
+  SleekClient, 
+  SleekAsyncClient,
+  Page,
+  Entry,
+  Image,
+  List 
+} from '@sleekcms/client';
 ```
 
 ## License
 
 MIT
-
-## Links
-
-- [SleekCMS Website](https://sleekcms.com)
-- [Documentation](https://docs.sleekcms.com)
-- [GitHub Repository](https://github.com/sleekcms/sleekcms-client)
