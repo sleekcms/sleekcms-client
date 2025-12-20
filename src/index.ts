@@ -1,7 +1,7 @@
 import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry } from "./types";
 import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath } from "./lib";
 
-export type { SleekSiteContent, ClientOptions, List, Image };
+export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry };
 
 export async function createClient(options: ClientOptions): Promise<SleekClient> {
   const data = await fetchSiteContent(options) as SleekSiteContent;
