@@ -51,4 +51,6 @@ export interface SleekAsyncClient {
   getSlugs(path: string): Promise<string[]>;
   getImage(name: string): Promise<Image | null>;
   getList(name: string): Promise<List | null>;
+  _getFetchUrl(): string;
+  _getEnvTag(): Promise<string>;
 }

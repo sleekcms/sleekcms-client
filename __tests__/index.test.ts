@@ -125,7 +125,7 @@ describe("SleekCMS Async Client", () => {
 
     it("should cache pages", async () => {
       const client = createAsyncClient({
-        siteToken: "prod-site123"
+        siteToken: "pub-site123"
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
       let result = await client.getPages();
@@ -133,6 +133,9 @@ describe("SleekCMS Async Client", () => {
 
       result = await client.getPages("/blog");
       expect(result.length).toBe(2);
+
+      let apiEndpoint = client._getFetchUrl();
+      expect(apiEndpoint).toBe("https://pub.sleekcms.com/site123/latest");
 
     })
 

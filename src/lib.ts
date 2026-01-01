@@ -7,9 +7,9 @@ function isDevToken(token: string): boolean {
 
 function getBaseUrl(token: string, devEnv: string): string {
   let [env, siteId, ...rest] = token.split("-");
-  if (devEnv === "production") return `https://${env}.sleekcms.com/${siteId}`;
-  else if (devEnv === "development") return `https://${env}.sleekcms.net/${siteId}`;
-  else if (devEnv === "localhost") return `http://localhost:9001/${env}/${siteId}`;
+  if (devEnv === "production") return `https://pub.sleekcms.com/${siteId}`;
+  else if (devEnv === "development") return `https://pub.sleekcms.net/${siteId}`;
+  else if (devEnv === "localhost") return `http://localhost:9001/localhost/${siteId}`;
   else throw new Error(`[SleekCMS] Unknown devEnv: ${devEnv}`);
 }
 
@@ -18,9 +18,9 @@ export function applyJmes(data: unknown, query?: string): any {
   return jmespath.search(data, query);
 }
 
-function getUrl({siteToken, env, search, lang, devEnv = "production"}: {siteToken: string; env?: string; search?: string; devEnv?: string, lang?: string}): string {
+export function getUrl({siteToken, env, search, lang, devEnv = "production"}: {siteToken: string; env?: string; search?: string; devEnv?: string, lang?: string}): string {
   const baseUrl = getBaseUrl(siteToken, devEnv).replace(/\/$/, "");
-  const url = new URL(`${baseUrl}/${env}`);
+  const url = new URL(`${baseUrl}/${env ?? 'latest'}`);
   if (search) url.searchParams.append("search", search);
   if (lang) url.searchParams.append("lang", lang);
 

@@ -1,5 +1,5 @@
 import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter } from "./types";
-import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath } from "./lib";
+import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath, getUrl } from "./lib";
 
 export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter };
 
@@ -160,6 +160,15 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     return Array.isArray(list) ? list : null;
   }
 
+  async function _getEnvTag(): Promise<string> {
+    let resp = await fetchEnvTag({siteToken, env});
+    return resp;
+  }
+
+  function _getFetchUrl(): string {
+    return getUrl(options);
+  }
+
   return {
     getContent,
     getPages,
@@ -167,6 +176,8 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     getEntry,
     getSlugs,
     getImage,
-    getList
+    getList,
+    _getFetchUrl,
+    _getEnvTag
   }
 }
