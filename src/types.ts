@@ -14,11 +14,23 @@ export interface SleekSiteContent {
   config?: { title?: string; };
 }
 
+export interface SyncCacheAdapter {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export interface AsyncCacheAdapter {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+}
+
 export interface ClientOptions {
   siteToken: string;
   env?: string; // site env / alias
   cdn?: boolean;
   lang?: string;
+  cache?: SyncCacheAdapter | AsyncCacheAdapter;
+  cacheMinutes?: number; // cache expiration in minutes
 }
 
 export interface SleekClient {

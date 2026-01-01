@@ -1,10 +1,24 @@
-import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry } from "./types";
+import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter } from "./types";
 import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath } from "./lib";
 
-export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry };
+export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter };
+
+// Default in-memory cache
+class MemoryCache implements SyncCacheAdapter {
+  private cache = new Map<string, string>();
+  
+  getItem(key: string): string | null {
+    return this.cache.get(key) ?? null;
+  }
+  
+  setItem(key: string, value: string): void {
+    this.cache.set(key, value);
+  }
+}
 
 export async function createClient(options: ClientOptions): Promise<SleekClient> {
-  const data = await fetchSiteContent(options) as SleekSiteContent;
+  const cache = options.cache ?? new MemoryCache();
+  const data = await fetchSiteContent({ ...options, cache }) as SleekSiteContent;
 
   function getContent(query?: string): SleekSiteContent {
     return applyJmes(data, query);
@@ -73,40 +87,39 @@ export async function createClient(options: ClientOptions): Promise<SleekClient>
   };
 }
 
-export function createAsyncClient({ siteToken, env = 'latest', cdn, lang}: ClientOptions): SleekAsyncClient | any {
+export function createAsyncClient(options: ClientOptions): SleekAsyncClient | any {
+  const { siteToken, env = 'latest', cdn, lang } = options;
+  const cache = options.cache ?? new MemoryCache();
 
   let syncClient: SleekClient | null = null;
   let tag: string | null = null;
-  let cache = {} as any;
 
   async function getContent(search?: string): Promise<SleekSiteContent | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (!search && !syncClient) {
-      syncClient = await createClient({ siteToken, env: tag ?? env, cdn, lang });
-      cache = {}; // don't need cache now
+      syncClient = await createClient({ siteToken, env: tag ?? env, cdn, lang, cache });
     }
     if (syncClient) return syncClient.getContent(search);
     if (!search) return null; // unlikely
     
-    if (!cache[search]) cache[search] = await fetchSiteContent({ siteToken, env: tag ?? env, search, lang }) as SleekSiteContent;
-    return cache[search] ?? null;
+    return await fetchSiteContent({ siteToken, env: tag ?? env, search, lang, cache }) as SleekSiteContent;
   }
 
   async function getPages(path: string): Promise<SleekSiteContent["pages"]> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (syncClient) return syncClient.getPages(path);
 
-    if (!cache.pages) cache.pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang }) as SleekSiteContent["pages"];
-    if (!path) return cache.pages;
-    else return filterPagesByPath(cache.pages, path);
+    const pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang, cache }) as SleekSiteContent["pages"];
+    if (!path) return pages;
+    else return filterPagesByPath(pages, path);
   }
 
   async function getPage(path: string): Promise<Page | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (syncClient) return syncClient.getPage(path);
 
-    if (!cache.pages) cache.pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang }) as SleekSiteContent["pages"];
-    const page = cache.pages?.find((p: any) => {
+    const pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang, cache }) as SleekSiteContent["pages"];
+    const page = pages?.find((p: any) => {
       const pth = typeof p._path === "string" ? p._path : "";
       return pth === path;
     });
@@ -119,34 +132,31 @@ export function createAsyncClient({ siteToken, env = 'latest', cdn, lang}: Clien
     if (syncClient) return syncClient.getEntry(handle);
 
     let search = `entries.${handle}`;
-    if (cache[search] === undefined) {
-      cache[search] = await fetchSiteContent({ siteToken, env: tag ?? env, search, lang }) as Entry | Entry[] | null;
-    }
-    return cache[search];
+    return await fetchSiteContent({ siteToken, env: tag ?? env, search, lang, cache }) as Entry | Entry[] | null;
   }
 
   async function getSlugs(path: string): Promise<string[]> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (syncClient) return syncClient.getSlugs(path);
 
-    if (!cache.pages) cache.pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang }) as SleekSiteContent["pages"];
-    return extractSlugs(cache.pages, path);
+    const pages = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'pages', lang, cache }) as SleekSiteContent["pages"];
+    return extractSlugs(pages, path);
   }
 
   async function getImage(name: string): Promise<Image | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (syncClient) return syncClient.getImage(name);
 
-    if (!cache.images) cache.images = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'images', lang }) as Record<string, Image>;
-    return cache.images ? cache.images[name] : null;
+    const images = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'images', lang, cache }) as Record<string, Image>;
+    return images ? images[name] : null;
   }
 
   async function getList(name: string): Promise<List | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
     if (syncClient) return syncClient.getList(name);
 
-    if (!cache.lists) cache.lists = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'lists', lang }) as Record<string, List>;
-    const list = cache.lists[name];
+    const lists = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'lists', lang, cache }) as Record<string, List>;
+    const list = lists[name];
     return Array.isArray(list) ? list : null;
   }
 
