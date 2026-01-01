@@ -50,7 +50,7 @@ export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: str
 }
 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
-  const { siteToken, env = 'latest', cdn = false, search, lang, cache, cacheExpiry } = options;
+  const { siteToken, env = 'latest', cdn = false, search, lang, cache, cacheMinutes } = options;
   
   let url = getUrl({siteToken, env, search, lang});
   if (cdn && !search) {
@@ -103,9 +103,9 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
         // Check if cache has timestamp (new format)
         if (cachedData._ts !== undefined) {
           // If expiry is set, check if cache is expired
-          if (cacheExpiry) {
+          if (cacheMinutes) {
             const now = Date.now();
-            const expiryMs = cacheExpiry * 60 * 1000; // convert minutes to milliseconds
+            const expiryMs = cacheMinutes * 60 * 1000; // convert minutes to milliseconds
             const age = now - cachedData._ts;
             
             if (age >= expiryMs) {
