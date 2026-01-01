@@ -50,34 +50,82 @@ export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: str
 }
 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
-  const { siteToken, env = 'latest', cdn = false, search, lang } = options;
+  const { siteToken, env = 'latest', cdn = false, search, lang, cache, cacheExpiry } = options;
   
   let url = getUrl({siteToken, env, search, lang});
   if (cdn && !search) {
     let tag = await fetchEnvTag({siteToken, env});
     url = getUrl({siteToken, env: tag, search, lang});
   }
+  
+  // Build cache key using URL (without token for security)
+  const cacheKey = url;
+  
+  // Function to fetch and cache data
+  const fetchAndCache = async () => {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: siteToken
+      }
+    });
 
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: siteToken
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        const data = (await res.json()) as { message?: string };
+        if (data && data.message) message = data.message;
+      } catch {
+        // ignore
+      }
+      throw new Error(`[SleekCMS] Request failed (${res.status}): ${message}`);
     }
-  });
 
-  if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const data = (await res.json()) as { message?: string };
-      if (data && data.message) message = data.message;
-    } catch {
-      // ignore
+    const data = await res.json() as any;
+    
+    // Always save to cache with timestamp
+    if (cache) {
+      const cacheData = { data, _ts: Date.now() };
+      await Promise.resolve(cache.setItem(cacheKey, JSON.stringify(cacheData)));
     }
-    throw new Error(`[SleekCMS] Request failed (${res.status}): ${message}`);
+    
+    return data;
+  };
+  
+  // Check cache first
+  if (cache) {
+    const cached = await Promise.resolve(cache.getItem(cacheKey));
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        
+        // Check if cache has timestamp (new format)
+        if (cachedData._ts !== undefined) {
+          // If expiry is set, check if cache is expired
+          if (cacheExpiry) {
+            const now = Date.now();
+            const expiryMs = cacheExpiry * 60 * 1000; // convert minutes to milliseconds
+            const age = now - cachedData._ts;
+            
+            if (age >= expiryMs) {
+              // Cache expired, continue to fetch
+              return await fetchAndCache();
+            }
+          }
+          // Cache is valid or no expiry set, return the data
+          return cachedData.data;
+        } else {
+          // Old format without timestamp (backward compatible)
+          return cachedData;
+        }
+      } catch (e) {
+        // Invalid cache, continue to fetch
+      }
+    }
   }
 
-  return await res.json() as any;
+  return await fetchAndCache();
 }
 
 export function isDevToken_export(token: string): boolean {
