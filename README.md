@@ -78,6 +78,8 @@ const posts = await client.getPages('/blog');
 | `env` | `string` | `'latest'` | Environment/alias name |
 | `cdn` | `boolean` | `false` | Resolve env name to bypass CDN cache. Adds latency. |
 | `lang` | `string` | - | Language code for internationalized content (e.g., `'en'`, `'es'`, `'fr'`) |
+| `cache` | `SyncCacheAdapter \| AsyncCacheAdapter` | In-memory cache | Custom cache adapter for storing fetched content |
+| `cacheMinutes` | `number` | - | Cache expiration time in minutes. If not set, cache never expires |
 
 **Internationalization Example:**
 
@@ -91,6 +93,61 @@ const client = await createClient({
 const page = client.getPage('/about');
 // Returns Spanish version of the page
 ```
+
+## Caching
+
+The client includes built-in caching support to improve performance and reduce API calls. By default, an in-memory cache is used, but you can provide your own cache adapter.
+
+### Default In-Memory Cache
+
+```typescript
+const client = await createClient({
+  siteToken: 'your-site-token'
+});
+// Uses built-in memory cache automatically
+```
+
+### Using localStorage
+
+```typescript
+const client = await createClient({
+  siteToken: 'your-site-token',
+  cache: localStorage,  // Use browser's localStorage
+  cacheMinutes: 60*24      // Cache expires after 1 day
+});
+```
+
+### Cache Adapter Interface
+
+Any object with `getItem` and `setItem` methods works as a cache adapter:
+
+```typescript
+// Synchronous cache adapter
+interface SyncCacheAdapter {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+// Asynchronous cache adapter
+interface AsyncCacheAdapter {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+}
+```
+
+### Cache Expiration
+
+Use `cacheMinutes` to set when cached content expires:
+
+```typescript
+const client = await createClient({
+  siteToken: 'your-site-token',
+  cache: localStorage,
+  cacheMinutes: 60*24  // Cache expires after 1 day
+});
+```
+
+If `cacheMinutes` is not set, cached content never expires (until cleared manually).
 
 ## API Reference
 
