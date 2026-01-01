@@ -364,4 +364,84 @@ describe("Custom Cache Adapters", () => {
     result = await client.getPages("/blog");
     expect(result.length).toBe(2); // Should still be 2 from cache
   });
+
+  it("should handle faulty cache getter gracefully", async () => {
+    const faultyCache = {
+      getItem: (key: string) => {
+        throw new Error("Cache read error");
+      },
+      setItem: (key: string, value: string) => {}
+    };
+
+    // Should still work despite cache errors
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
+
+    const client = await createClient({
+      siteToken: "prod-site123",
+      cache: faultyCache
+    });
+
+    const result = client.getContent() as any;
+    expect(result).toEqual(mockSiteContent); // Should get data from fetch
+  });
+
+  it("should handle faulty cache setter gracefully", async () => {
+    const faultyCache = {
+      getItem: (key: string) => null,
+      setItem: (key: string, value: string) => {
+        throw new Error("Cache write error");
+      }
+    };
+
+    // Should still work despite cache write errors
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
+
+    const client = await createClient({
+      siteToken: "prod-site123",
+      cache: faultyCache
+    });
+
+    const result = client.getContent() as any;
+    expect(result).toEqual(mockSiteContent); // Should get data from fetch
+  });
+
+  it("should handle async cache errors gracefully", async () => {
+    const faultyAsyncCache = {
+      getItem: async (key: string) => {
+        throw new Error("Async cache read error");
+      },
+      setItem: async (key: string, value: string) => {
+        throw new Error("Async cache write error");
+      }
+    };
+
+    // Should still work despite async cache errors
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
+
+    const client = await createClient({
+      siteToken: "prod-site123",
+      cache: faultyAsyncCache
+    });
+
+    const result = client.getContent() as any;
+    expect(result).toEqual(mockSiteContent); // Should get data from fetch
+  });
+
+  it("should handle corrupted cache data gracefully", async () => {
+    const corruptedCache = {
+      getItem: (key: string) => "this is not valid JSON{[",
+      setItem: (key: string, value: string) => {}
+    };
+
+    // Should fetch fresh data when cache data is corrupted
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
+
+    const client = await createClient({
+      siteToken: "prod-site123",
+      cache: corruptedCache
+    });
+
+    const result = client.getContent() as any;
+    expect(result).toEqual(mockSiteContent); // Should get data from fetch
+  });
 });

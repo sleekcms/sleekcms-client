@@ -86,8 +86,13 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
     
     // Always save to cache with timestamp
     if (cache) {
-      const cacheData = { data, _ts: Date.now() };
-      await Promise.resolve(cache.setItem(cacheKey, JSON.stringify(cacheData)));
+      try {
+        const cacheData = { data, _ts: Date.now() };
+        await Promise.resolve(cache.setItem(cacheKey, JSON.stringify(cacheData)));
+      } catch (e) {
+        // Cache write failed, continue without caching
+        console.warn('[SleekCMS] Cache write failed:', e);
+      }
     }
     
     return data;
@@ -95,33 +100,38 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
   
   // Check cache first
   if (cache) {
-    const cached = await Promise.resolve(cache.getItem(cacheKey));
-    if (cached) {
-      try {
-        const cachedData = JSON.parse(cached);
-        
-        // Check if cache has timestamp (new format)
-        if (cachedData._ts !== undefined) {
-          // If expiry is set, check if cache is expired
-          if (cacheMinutes) {
-            const now = Date.now();
-            const expiryMs = cacheMinutes * 60 * 1000; // convert minutes to milliseconds
-            const age = now - cachedData._ts;
-            
-            if (age >= expiryMs) {
-              // Cache expired, continue to fetch
-              return await fetchAndCache();
+    try {
+      const cached = await Promise.resolve(cache.getItem(cacheKey));
+      if (cached) {
+        try {
+          const cachedData = JSON.parse(cached);
+          
+          // Check if cache has timestamp (new format)
+          if (cachedData._ts !== undefined) {
+            // If expiry is set, check if cache is expired
+            if (cacheMinutes) {
+              const now = Date.now();
+              const expiryMs = cacheMinutes * 60 * 1000; // convert minutes to milliseconds
+              const age = now - cachedData._ts;
+              
+              if (age >= expiryMs) {
+                // Cache expired, continue to fetch
+                return await fetchAndCache();
+              }
             }
+            // Cache is valid or no expiry set, return the data
+            return cachedData.data;
+          } else {
+            // Old format without timestamp (backward compatible)
+            return cachedData;
           }
-          // Cache is valid or no expiry set, return the data
-          return cachedData.data;
-        } else {
-          // Old format without timestamp (backward compatible)
-          return cachedData;
+        } catch (e) {
+          // Invalid cache data, continue to fetch
         }
-      } catch (e) {
-        // Invalid cache, continue to fetch
       }
+    } catch (e) {
+      // Cache read failed, continue without using cache
+      console.warn('[SleekCMS] Cache read failed:', e);
     }
   }
 
