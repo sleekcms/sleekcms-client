@@ -1,6 +1,8 @@
-# SleekCMS Client
+# @sleekcms/client
 
 Official JavaScript/TypeScript client for [SleekCMS](https://sleekcms.com) - a headless CMS that lets you manage content and deliver it via API.
+
+Sign in at [sleekcms.com](https://sleekcms.com), create your content models, add your content, then grab your site token and use this library to integrate content in your apps.
 
 ## Installation
 
