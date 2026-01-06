@@ -63,7 +63,7 @@ describe("SleekCMS Sync Client", () => {
       result = client.getEntry("foo");
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
-      result = client.getOptionSet("categories");
+      result = client.getOptions("categories");
       expect(result.length).toBe(2);
 
       result = client.getImage("logo");
@@ -158,7 +158,7 @@ describe("SleekCMS Async Client", () => {
       result = await client.getEntry("foo");
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
-      result = await client.getOptionSet("categories");
+      result = await client.getOptions("categories");
       expect(result.length).toBe(2);
 
       result = await client.getImage("logo");
@@ -194,7 +194,7 @@ describe("SleekCMS Async Client", () => {
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.options });
-      result = await client.getOptionSet("categories");
+      result = await client.getOptions("categories");
       expect(result.length).toBe(2);
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.images });

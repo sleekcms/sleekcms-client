@@ -213,12 +213,12 @@ const logo = client.getImage('logo');
 // { url: 'https://...', alt: '...', ... }
 ```
 
-### `getOptionSet(name)`
+### `getOptions(name)`
 
 Get a option set (array of label/value pairs).
 
 ```typescript
-const categories = client.getOptionSet('categories');
+const categories = client.getOptions('categories');
 // [{ label: 'Tech', value: 'tech' }, ...]
 ```
 

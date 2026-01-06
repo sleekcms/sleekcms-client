@@ -40,7 +40,7 @@ export interface SleekClient {
   getEntry(handle: string): Entry | Entry[] | null;
   getSlugs(path: string): string[];
   getImage(name: string): Image | null;
-  getOptionSet(name: string): Options | null;
+  getOptions(name: string): Options | null;
 }
 
 export interface SleekAsyncClient {
@@ -50,7 +50,7 @@ export interface SleekAsyncClient {
   getEntry(handle: string): Promise<Entry | Entry[] | null>;
   getSlugs(path: string): Promise<string[]>;
   getImage(name: string): Promise<Image | null>;
-  getOptionSet(name: string): Promise<Options | null>;
+  getOptions(name: string): Promise<Options | null>;
   _getFetchUrl(): string;
   _getEnvTag(): Promise<string>;
 }

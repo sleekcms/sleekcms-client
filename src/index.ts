@@ -69,7 +69,7 @@ export async function createClient(options: ClientOptions): Promise<SleekClient>
     return data.images ? data.images[name] : null;
   }
 
-  function getOptionSet(name: string): Options | null {
+  function getOptions(name: string): Options | null {
     if (!name) return null;
     const options = data.options ?? {};
     const optionSet = options[name];
@@ -83,7 +83,7 @@ export async function createClient(options: ClientOptions): Promise<SleekClient>
     getEntry,
     getSlugs,
     getImage,
-    getOptionSet
+    getOptions
   };
 }
 
@@ -151,9 +151,9 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     return images ? images[name] : null;
   }
 
-  async function getOptionSet(name: string): Promise<Options | null> {
+  async function getOptions(name: string): Promise<Options | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
-    if (syncClient) return syncClient.getOptionSet(name);
+    if (syncClient) return syncClient.getOptions(name);
 
     const options = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'options', lang, cache }) as Record<string, Options>;
     const optionSet = options[name];
@@ -176,7 +176,7 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     getEntry,
     getSlugs,
     getImage,
-    getOptionSet,
+    getOptions,
     _getFetchUrl,
     _getEnvTag
   }
