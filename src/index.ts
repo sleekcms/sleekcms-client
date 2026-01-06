@@ -1,7 +1,7 @@
-import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter } from "./types";
+import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter } from "./types";
 import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath, getUrl } from "./lib";
 
-export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, List, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter };
+export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter };
 
 // Default in-memory cache
 class MemoryCache implements SyncCacheAdapter {
@@ -69,11 +69,11 @@ export async function createClient(options: ClientOptions): Promise<SleekClient>
     return data.images ? data.images[name] : null;
   }
 
-  function getList(name: string): List | null {
+  function getOptionSet(name: string): Options | null {
     if (!name) return null;
-    const lists = data.lists ?? {};
-    const list = lists[name];
-    return Array.isArray(list) ? list : null;
+    const options = data.options ?? {};
+    const optionSet = options[name];
+    return Array.isArray(optionSet) ? optionSet : null;
   }
 
   return {
@@ -83,7 +83,7 @@ export async function createClient(options: ClientOptions): Promise<SleekClient>
     getEntry,
     getSlugs,
     getImage,
-    getList
+    getOptionSet
   };
 }
 
@@ -151,13 +151,13 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     return images ? images[name] : null;
   }
 
-  async function getList(name: string): Promise<List | null> {
+  async function getOptionSet(name: string): Promise<Options | null> {
     if (cdn && !tag) tag = await fetchEnvTag({siteToken, env});
-    if (syncClient) return syncClient.getList(name);
+    if (syncClient) return syncClient.getOptionSet(name);
 
-    const lists = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'lists', lang, cache }) as Record<string, List>;
-    const list = lists[name];
-    return Array.isArray(list) ? list : null;
+    const options = await fetchSiteContent({ siteToken, env: tag ?? env, search: 'options', lang, cache }) as Record<string, Options>;
+    const optionSet = options[name];
+    return Array.isArray(optionSet) ? optionSet : null;
   }
 
   async function _getEnvTag(): Promise<string> {
@@ -176,7 +176,7 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     getEntry,
     getSlugs,
     getImage,
-    getList,
+    getOptionSet,
     _getFetchUrl,
     _getEnvTag
   }

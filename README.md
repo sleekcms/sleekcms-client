@@ -213,12 +213,12 @@ const logo = client.getImage('logo');
 // { url: 'https://...', alt: '...', ... }
 ```
 
-### `getList(name)`
+### `getOptionSet(name)`
 
-Get a list (array of label/value pairs).
+Get a option set (array of label/value pairs).
 
 ```typescript
-const categories = client.getList('categories');
+const categories = client.getOptionSet('categories');
 // [{ label: 'Tech', value: 'tech' }, ...]
 ```
 
@@ -327,7 +327,7 @@ import type {
   Page,
   Entry,
   Image,
-  List 
+  Options 
 } from '@sleekcms/client';
 ```
 

@@ -21,7 +21,7 @@ const mockSiteContent: SleekSiteContent = {
     logo: { url: "https://example.com/logo.png", width: 200, height: 100 },
     hero: { url: "https://example.com/hero.jpg", width: 1200, height: 600 }
   },
-  lists: {
+  options: {
     categories: [
       { label: "Technology", value: "tech" },
       { label: "Business", value: "business" }
@@ -63,7 +63,7 @@ describe("SleekCMS Sync Client", () => {
       result = client.getEntry("foo");
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
-      result = client.getList("categories");
+      result = client.getOptionSet("categories");
       expect(result.length).toBe(2);
 
       result = client.getImage("logo");
@@ -158,7 +158,7 @@ describe("SleekCMS Async Client", () => {
       result = await client.getEntry("foo");
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
-      result = await client.getList("categories");
+      result = await client.getOptionSet("categories");
       expect(result.length).toBe(2);
 
       result = await client.getImage("logo");
@@ -193,8 +193,8 @@ describe("SleekCMS Async Client", () => {
       result = await client.getEntry("foo");
       expect(result).toEqual({ title: "Foo Entry", content: "This is foo." });
 
-      fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.lists });
-      result = await client.getList("categories");
+      fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.options });
+      result = await client.getOptionSet("categories");
       expect(result.length).toBe(2);
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.images });

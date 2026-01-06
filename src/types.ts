@@ -2,7 +2,7 @@
 export type Entry = Record<string, unknown>;
 export type Page = { _path: string; [key: string]: unknown };
 export type Image = { url: string; [key: string]: unknown };
-export type List = Array<{ label: string; value: string }>;
+export type Options = Array<{ label: string; value: string }>;
 
 export interface SleekSiteContent {
   entries?: {
@@ -10,7 +10,7 @@ export interface SleekSiteContent {
   };
   pages?: Array<Page>;
   images?: Record<string, Image>;
-  lists?: Record<string, List>;
+  options?: Record<string, Options>;
   config?: { title?: string; };
 }
 
@@ -40,7 +40,7 @@ export interface SleekClient {
   getEntry(handle: string): Entry | Entry[] | null;
   getSlugs(path: string): string[];
   getImage(name: string): Image | null;
-  getList(name: string): List | null;
+  getOptionSet(name: string): Options | null;
 }
 
 export interface SleekAsyncClient {
@@ -50,7 +50,7 @@ export interface SleekAsyncClient {
   getEntry(handle: string): Promise<Entry | Entry[] | null>;
   getSlugs(path: string): Promise<string[]>;
   getImage(name: string): Promise<Image | null>;
-  getList(name: string): Promise<List | null>;
+  getOptionSet(name: string): Promise<Options | null>;
   _getFetchUrl(): string;
   _getEnvTag(): Promise<string>;
 }
