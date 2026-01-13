@@ -27,7 +27,7 @@ export interface AsyncCacheAdapter {
 export interface ClientOptions {
   siteToken: string;
   env?: string; // site env / alias
-  cdn?: boolean;
+  resolveEnv?: boolean;
   lang?: string;
   cache?: SyncCacheAdapter | AsyncCacheAdapter;
   cacheMinutes?: number; // cache expiration in minutes

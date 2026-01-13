@@ -13,9 +13,9 @@ npm install @sleekcms/client
 ## Quick Start
 
 ```typescript
-import { createClient } from '@sleekcms/client';
+import { createSyncClient } from '@sleekcms/client';
 
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token',
   env: 'latest'
 });
@@ -34,11 +34,11 @@ const footer = client.getEntry('footer');
 
 ### Sync Client (Recommended for SSG)
 
-**`createClient()`** fetches all content upfront and returns a client with synchronous methods. Best for static site generation where you build once and want instant access to content.
+**`createSyncClient()`** fetches all content upfront and returns a client with synchronous methods. Best for static site generation where you build once and want instant access to content.
 
 ```typescript
 // Async initialization, sync usage
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token'
 });
 
@@ -59,7 +59,7 @@ const slugs = client.getSlugs('/blog');
 ```typescript
 const client = createAsyncClient({
   siteToken: 'your-site-token',
-  cdn: true  // optional: cache-friendly URLs
+  resolveEnv: true  // optional: cache-friendly URLs
 });
 
 // All methods are async
@@ -78,8 +78,8 @@ const posts = await client.getPages('/blog');
 |--------|------|---------|-------------|
 | `siteToken` | `string` | required | Your site token from SleekCMS |
 | `env` | `string` | `'latest'` | Environment/alias name |
-| `cdn` | `boolean` | `false` | Resolve env name to bypass CDN cache. Adds latency. |
-| `lang` | `string` | - | Language code for internationalized content (e.g., `'en'`, `'es'`, `'fr'`) |
+| `resolveEnv` | `boolean` | `false` | Env is an alias to version. This flag resolves env to version tag, so as to bypass CDN cache. Add's some latency.|
+| `lang` | `string` | - | Language code for internationalized content |
 | `cache` | `SyncCacheAdapter \| AsyncCacheAdapter` | In-memory cache | Custom cache adapter for storing fetched content |
 | `cacheMinutes` | `number` | - | Cache expiration time in minutes. If not set, cache never expires |
 
@@ -87,7 +87,7 @@ const posts = await client.getPages('/blog');
 
 ```typescript
 // Fetch Spanish content
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token',
   lang: 'es'
 });
@@ -103,7 +103,7 @@ The client includes built-in caching support to improve performance and reduce A
 ### Default In-Memory Cache
 
 ```typescript
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token'
 });
 // Uses built-in memory cache automatically
@@ -112,7 +112,7 @@ const client = await createClient({
 ### Using localStorage
 
 ```typescript
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token',
   cache: localStorage,  // Use browser's localStorage
   cacheMinutes: 60*24      // Cache expires after 1 day
@@ -142,7 +142,7 @@ interface AsyncCacheAdapter {
 Use `cacheMinutes` to set when cached content expires:
 
 ```typescript
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: 'your-site-token',
   cache: localStorage,
   cacheMinutes: 60*24  // Cache expires after 1 day
@@ -228,10 +228,10 @@ const categories = client.getOptions('categories');
 
 ```typescript
 // app/blog/page.tsx
-import { createClient } from '@sleekcms/client';
+import { createSyncClient } from '@sleekcms/client';
 
 export default async function BlogPage() {
-  const client = await createClient({
+  const client = await createSyncClient({
     siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
@@ -253,10 +253,10 @@ export default async function BlogPage() {
 
 ```typescript
 // app/blog/[slug]/page.tsx
-import { createClient } from '@sleekcms/client';
+import { createSyncClient } from '@sleekcms/client';
 
 export async function generateStaticParams() {
-  const client = await createClient({
+  const client = await createSyncClient({
     siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
@@ -266,7 +266,7 @@ export async function generateStaticParams() {
 }
 
 export default async function Post({ params }: { params: { slug: string } }) {
-  const client = await createClient({
+  const client = await createSyncClient({
     siteToken: process.env.SLEEKCMS_SITE_TOKEN!
   });
 
@@ -284,7 +284,7 @@ import { createAsyncClient } from '@sleekcms/client';
 
 const client = createAsyncClient({
   siteToken: process.env.SLEEKCMS_SITE_TOKEN,
-  cdn: true
+  resolveEnv: true
 });
 
 export async function load() {
@@ -298,9 +298,9 @@ export async function load() {
 ```astro
 ---
 // src/pages/blog/index.astro
-import { createClient } from '@sleekcms/client';
+import { createSyncClient } from '@sleekcms/client';
 
-const client = await createClient({
+const client = await createSyncClient({
   siteToken: import.meta.env.SLEEKCMS_SITE_TOKEN
 });
 

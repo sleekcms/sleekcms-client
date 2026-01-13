@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createClient, createAsyncClient } from "../src/index";
+import { createSyncClient, createAsyncClient } from "../src/index";
 import { clearEnvTagCache } from "../src/lib";
 import type { SleekSiteContent } from "../src/types";
 
@@ -49,9 +49,9 @@ describe("SleekCMS Sync Client", () => {
     it("should fetch full content and resolve locally", async () => {
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-      const client = await createClient({
+      const client = await createSyncClient({
         siteToken: "prod-site123",
-        cdn: true
+        resolveEnv: true
       });
 
       let result = client.getContent() as any;
@@ -80,29 +80,29 @@ describe("SleekCMS Sync Client", () => {
 
     });
 
-    it("should handle when cdn is true", async () => {
+    it("should handle when resolveEnv is true", async () => {
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-      const client = await createClient({
+      const client = await createSyncClient({
         siteToken: "prod-site123",
-        cdn: true
+        resolveEnv: true
       });
 
       let result = client.getContent() as any;
       expect(result).toEqual(mockSiteContent);
       
-      // Should only fetch once (no tag resolution when cdn is true)
+      // Should only fetch once (no tag resolution when resolveEnv is true)
       expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle when cdn is false and fetch env tag", async () => {
+    it("should handle when resolveEnv is false and fetch env tag", async () => {
       fetchSpy
         .mockResolvedValueOnce({ ok: true, json: async () => ({ tag: "abcdefgh" }) })
         .mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-      const client = await createClient({
+      const client = await createSyncClient({
         siteToken: "prod-site123",
-        cdn: false
+        resolveEnv: false
       });
 
       let result = client.getContent() as any;
@@ -139,7 +139,7 @@ describe("SleekCMS Async Client", () => {
 
       const client = createAsyncClient({
         siteToken: "prod-site123",
-        cdn: true
+        resolveEnv: true
       });
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ test: 1}) });
@@ -156,7 +156,7 @@ describe("SleekCMS Async Client", () => {
     it("should cache pages", async () => {
       const client = createAsyncClient({
         siteToken: "pub-site123",
-        cdn: true
+        resolveEnv: true
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
       let result = await client.getPages();
@@ -171,10 +171,10 @@ describe("SleekCMS Async Client", () => {
 
     });
 
-    it("should cache env tag and reuse on subsequent calls when cdn is false", async () => {
+    it("should cache env tag and reuse on subsequent calls when resolveEnv is false", async () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
-        cdn: false
+        resolveEnv: false
       });
       
       // First call - should fetch tag and content
@@ -204,7 +204,7 @@ describe("SleekCMS Async Client", () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
         env: "staging",
-        cdn: true
+        resolveEnv: true
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
@@ -238,7 +238,7 @@ describe("SleekCMS Async Client", () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
         env: "staging",
-        cdn: true
+        resolveEnv: true
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.images?.logo });
 
@@ -295,10 +295,10 @@ describe("Custom Cache Adapters", () => {
 
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;
@@ -310,10 +310,10 @@ describe("Custom Cache Adapters", () => {
     // Create another client with same cache - should use cached data
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ different: "data" }) });
     
-    const client2 = await createClient({
+    const client2 = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result2 = client2.getContent() as any;
@@ -329,10 +329,10 @@ describe("Custom Cache Adapters", () => {
 
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;
@@ -344,10 +344,10 @@ describe("Custom Cache Adapters", () => {
     // Create another client with same cache - should use cached data
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ different: "data" }) });
     
-    const client2 = await createClient({
+    const client2 = await createSyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result2 = client2.getContent() as any;
@@ -364,11 +364,11 @@ describe("Custom Cache Adapters", () => {
     // First fetch
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1, // 1 minute expiry
-      cdn: true
+      resolveEnv: true
     });
 
     let result = client.getContent() as any;
@@ -383,11 +383,11 @@ describe("Custom Cache Adapters", () => {
     expect(parsed.data).toBeDefined();
     
     // Immediately fetch again - should use cache, no fetch should happen
-    const client2 = await createClient({
+    const client2 = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1,
-      cdn: true
+      resolveEnv: true
     });
 
     result = client2.getContent() as any;
@@ -401,11 +401,11 @@ describe("Custom Cache Adapters", () => {
     // Now fetch again - should get new data
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ fresh: "data" }) });
     
-    const client3 = await createClient({
+    const client3 = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1,
-      cdn: true
+      resolveEnv: true
     });
 
     result = client3.getContent() as any;
@@ -423,7 +423,7 @@ describe("Custom Cache Adapters", () => {
     const client = createAsyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
@@ -451,10 +451,10 @@ describe("Custom Cache Adapters", () => {
     // Should still work despite cache errors
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;
@@ -472,10 +472,10 @@ describe("Custom Cache Adapters", () => {
     // Should still work despite cache write errors
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;
@@ -495,10 +495,10 @@ describe("Custom Cache Adapters", () => {
     // Should still work despite async cache errors
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyAsyncCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;
@@ -514,10 +514,10 @@ describe("Custom Cache Adapters", () => {
     // Should fetch fresh data when cache data is corrupted
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
-    const client = await createClient({
+    const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: corruptedCache,
-      cdn: true
+      resolveEnv: true
     });
 
     const result = client.getContent() as any;

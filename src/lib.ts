@@ -58,19 +58,23 @@ export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: str
 }
 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
-  const { siteToken, env = 'latest', cdn = false, search, lang, cache, cacheMinutes } = options;
+  const { siteToken, env = 'latest', resolveEnv = false, search, lang, cache, cacheMinutes } = options;
   
   let url = getUrl({siteToken, env, search, lang});
-  if (!cdn) {
+  if (!resolveEnv) {
     const cacheKey = `${siteToken}:${env}`;
     let tag = envTagCache.get(cacheKey);
     
-    if (!tag) {
-      tag = await fetchEnvTag({siteToken, env});
-      envTagCache.set(cacheKey, tag);
+    try {
+      if (!tag) {
+        tag = await fetchEnvTag({siteToken, env});
+        envTagCache.set(cacheKey, tag);
+      }
+      
+      url = getUrl({siteToken, env: tag, search, lang});      
+    } catch (error) {
+      console.warn("[SleekCMS] Failed to resolve env tag, using cached content instead.");
     }
-    
-    url = getUrl({siteToken, env: tag, search, lang});
   }
   
   // Build cache key using URL (without token for security)
@@ -130,8 +134,12 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
               const age = now - cachedData._ts;
               
               if (age >= expiryMs) {
-                // Cache expired, continue to fetch
-                return await fetchAndCache();
+                try {
+                  // Cache expired, continue to fetch
+                  return await fetchAndCache();                  
+                } catch (error) {
+                  console.warn('[SleekCMS] Fetch failed, using expired cache:', error);
+                }
               }
             }
             // Cache is valid or no expiry set, return the data
