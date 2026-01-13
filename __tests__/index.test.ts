@@ -51,7 +51,7 @@ describe("SleekCMS Sync Client", () => {
 
       const client = await createSyncClient({
         siteToken: "prod-site123",
-        resolveEnv: true
+        resolveEnv: false
       });
 
       let result = client.getContent() as any;
@@ -85,7 +85,7 @@ describe("SleekCMS Sync Client", () => {
 
       const client = await createSyncClient({
         siteToken: "prod-site123",
-        resolveEnv: true
+        resolveEnv: false
       });
 
       let result = client.getContent() as any;
@@ -102,7 +102,7 @@ describe("SleekCMS Sync Client", () => {
 
       const client = await createSyncClient({
         siteToken: "prod-site123",
-        resolveEnv: false
+        resolveEnv: true
       });
 
       let result = client.getContent() as any;
@@ -139,7 +139,7 @@ describe("SleekCMS Async Client", () => {
 
       const client = createAsyncClient({
         siteToken: "prod-site123",
-        resolveEnv: true
+        resolveEnv: false
       });
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ test: 1}) });
@@ -156,7 +156,7 @@ describe("SleekCMS Async Client", () => {
     it("should cache pages", async () => {
       const client = createAsyncClient({
         siteToken: "pub-site123",
-        resolveEnv: true
+        resolveEnv: false
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
       let result = await client.getPages();
@@ -174,7 +174,7 @@ describe("SleekCMS Async Client", () => {
     it("should cache env tag and reuse on subsequent calls when resolveEnv is false", async () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
-        resolveEnv: false
+        resolveEnv: true
       });
       
       // First call - should fetch tag and content
@@ -204,7 +204,7 @@ describe("SleekCMS Async Client", () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
         env: "staging",
-        resolveEnv: true
+        resolveEnv: false
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent });
 
@@ -238,7 +238,7 @@ describe("SleekCMS Async Client", () => {
       const client = createAsyncClient({
         siteToken: "prod-site123",
         env: "staging",
-        resolveEnv: true
+        resolveEnv: false
       });
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.images?.logo });
 
@@ -298,7 +298,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;
@@ -313,7 +313,7 @@ describe("Custom Cache Adapters", () => {
     const client2 = await createSyncClient({
       siteToken: "prod-site123",
       cache: syncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result2 = client2.getContent() as any;
@@ -332,7 +332,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;
@@ -347,7 +347,7 @@ describe("Custom Cache Adapters", () => {
     const client2 = await createSyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result2 = client2.getContent() as any;
@@ -368,7 +368,7 @@ describe("Custom Cache Adapters", () => {
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1, // 1 minute expiry
-      resolveEnv: true
+      resolveEnv: false
     });
 
     let result = client.getContent() as any;
@@ -387,7 +387,7 @@ describe("Custom Cache Adapters", () => {
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     result = client2.getContent() as any;
@@ -405,7 +405,7 @@ describe("Custom Cache Adapters", () => {
       siteToken: "prod-site123",
       cache: syncCache,
       cacheMinutes: 1,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     result = client3.getContent() as any;
@@ -423,7 +423,7 @@ describe("Custom Cache Adapters", () => {
     const client = createAsyncClient({
       siteToken: "prod-site123",
       cache: asyncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
@@ -454,7 +454,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;
@@ -475,7 +475,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;
@@ -498,7 +498,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: faultyAsyncCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;
@@ -517,7 +517,7 @@ describe("Custom Cache Adapters", () => {
     const client = await createSyncClient({
       siteToken: "prod-site123",
       cache: corruptedCache,
-      resolveEnv: true
+      resolveEnv: false
     });
 
     const result = client.getContent() as any;

@@ -59,7 +59,7 @@ const slugs = client.getSlugs('/blog');
 ```typescript
 const client = createAsyncClient({
   siteToken: 'your-site-token',
-  resolveEnv: true  // optional: cache-friendly URLs
+  resolveEnv: true  // optional: resolve env to version tag to invalidate CDN cache if required
 });
 
 // All methods are async

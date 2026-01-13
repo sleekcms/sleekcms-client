@@ -61,7 +61,7 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
   const { siteToken, env = 'latest', resolveEnv = false, search, lang, cache, cacheMinutes } = options;
   
   let url = getUrl({siteToken, env, search, lang});
-  if (!resolveEnv) {
+  if (resolveEnv) {
     const cacheKey = `${siteToken}:${env}`;
     let tag = envTagCache.get(cacheKey);
     
