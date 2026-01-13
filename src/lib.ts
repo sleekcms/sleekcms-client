@@ -1,6 +1,14 @@
 import * as jmespath from "jmespath";
 import type { ClientOptions, SleekSiteContent } from "./types";
 
+// Cache for resolved env tags to avoid repeated fetchEnvTag calls
+const envTagCache = new Map<string, string>();
+
+// Export function to clear the cache (useful for testing)
+export function clearEnvTagCache() {
+  envTagCache.clear();
+}
+
 function isDevToken(token: string): boolean {
   return token.startsWith("dev-");
 }
@@ -53,8 +61,15 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
   const { siteToken, env = 'latest', cdn = false, search, lang, cache, cacheMinutes } = options;
   
   let url = getUrl({siteToken, env, search, lang});
-  if (cdn && !search) {
-    let tag = await fetchEnvTag({siteToken, env});
+  if (!cdn) {
+    const cacheKey = `${siteToken}:${env}`;
+    let tag = envTagCache.get(cacheKey);
+    
+    if (!tag) {
+      tag = await fetchEnvTag({siteToken, env});
+      envTagCache.set(cacheKey, tag);
+    }
+    
     url = getUrl({siteToken, env: tag, search, lang});
   }
   
