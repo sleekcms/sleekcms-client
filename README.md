@@ -6,8 +6,50 @@ Sign in at [sleekcms.com](https://sleekcms.com), create your content models, add
 
 ## Installation
 
+### From NPM
+
 ```bash
 npm install @sleekcms/client
+```
+
+### From CDN (Browser)
+
+Include the library directly in your HTML from a CDN:
+
+```html
+<!-- From unpkg -->
+<script src="https://unpkg.com/@sleekcms/client"></script>
+
+<!-- From jsdelivr -->
+<script src="https://cdn.jsdelivr.net/npm/@sleekcms/client"></script>
+
+<!-- Specific version -->
+<script src="https://unpkg.com/@sleekcms/client@3.1.0"></script>
+```
+
+The library is available globally as `SleekCMS`:
+
+```html
+<script src="https://unpkg.com/@sleekcms/client"></script>
+<script>
+  // Use the sync client
+  SleekCMS.createSyncClient({
+    siteToken: 'your-site-token',
+    env: 'latest'
+  }).then(client => {
+    const page = client.getPage('/about');
+    console.log(page);
+  });
+
+  // Or use the async client
+  const client = SleekCMS.createAsyncClient({
+    siteToken: 'your-site-token'
+  });
+  
+  client.getPage('/pricing').then(page => {
+    console.log(page);
+  });
+</script>
 ```
 
 ## Quick Start

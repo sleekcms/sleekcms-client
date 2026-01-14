@@ -1,11 +1,13 @@
 {
   "name": "@sleekcms/client",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Official SleekCMS content client for Node 18+ and browser",
   "type": "module",
   "main": "index.cjs",
   "module": "index.mjs",
   "types": "index.d.ts",
+  "unpkg": "index.global.min.js",
+  "jsdelivr": "index.global.min.js",
   "private": true,
   "exports": {
     ".": {
@@ -15,7 +17,7 @@
     }
   },
   "scripts": {
-    "build": "npm run clean && tsup && cp README.md dist/ && cp .npmrc dist/ && jq '.private = false | .files = [\"index.cjs\", \"index.mjs\", \"index.d.ts\", \"index.d.cts\", \"README.md\"]' package.json > dist/package.json",
+    "build": "npm run clean && tsup && cp README.md dist/ && cp .npmrc dist/ && jq '.private = false | .files = [\"index.cjs\", \"index.mjs\", \"index.d.ts\", \"index.d.cts\", \"index.global.js\", \"index.global.js.map\", \"index.global.min.js\", \"index.global.min.js.map\", \"README.md\"]' package.json > dist/package.json",
     "clean": "rimraf dist || true",
     "test": "vitest run",
     "test:watch": "vitest",
