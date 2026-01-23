@@ -179,10 +179,12 @@ export function extractSlugs(pages: SleekSiteContent["pages"], path: string): st
   return slugs;
 }
 
-export function filterPagesByPath(pages: SleekSiteContent["pages"], path: string): SleekSiteContent["pages"] {
+export function filterPagesByPath(pages: SleekSiteContent["pages"], path: string, options?: { collection?: boolean }): SleekSiteContent["pages"] {
   const pagesList = pages ?? [];
   return pagesList.filter((p) => {
     const pth = typeof p._path === "string" ? p._path : "";
-    return pth.startsWith(path);
+    if (path && !pth.startsWith(path)) return false;
+    if (options?.collection && !('_slug' in p)) return false;
+    return true;
   });
 }

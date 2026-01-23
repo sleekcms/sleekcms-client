@@ -60,6 +60,18 @@ describe("SleekCMS Sync Client", () => {
       result = client.getPages("/blog");
       expect(result.length).toBe(2);
 
+      result = client.getPages("/blog", { collection: true });
+      expect(result.length).toBe(2);
+      expect(result.every((p: any) => '_slug' in p)).toBe(true);
+
+      // Test that non-collection pages are filtered out
+      result = client.getPages("/");
+      expect(result.length).toBe(4);
+
+      result = client.getPages("/", { collection: true });
+      expect(result.length).toBe(2);
+      expect(result.every((p: any) => '_slug' in p)).toBe(true);
+
       result = client.getPage("/about");
       expect(result).toEqual({ _path: "/about", title: "About", published: true });
 

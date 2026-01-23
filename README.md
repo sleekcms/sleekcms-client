@@ -210,13 +210,24 @@ const pages = client.getContent('pages');
 const title = client.getContent('config.title');
 ```
 
-### `getPages(path)`
+### `getPages(path, options?)`
 
 Get all pages that start with a specific path.
 
 ```typescript
 const posts = client.getPages('/blog');
 const products = client.getPages('/shop/products');
+```
+
+**Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `collection` | `boolean` | If `true`, only returns pages that are part of a collection / multiple records |
+
+```typescript
+// Get only collection pages / multiple records
+const posts = client.getPages('/blog', { collection: true });
 ```
 
 ### `getPage(path)`

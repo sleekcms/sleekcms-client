@@ -3,6 +3,7 @@ export type Entry = Record<string, unknown>;
 export type Page = { _path: string; [key: string]: unknown };
 export type Image = { url: string; [key: string]: unknown };
 export type Options = Array<{ label: string; value: string }>;
+export type GetPagesOptions = { collection?: boolean };
 
 export interface SleekSiteContent {
   entries?: {
@@ -35,7 +36,7 @@ export interface ClientOptions {
 
 export interface SleekClient {
   getContent(query?: string): SleekSiteContent;
-  getPages(path: string): SleekSiteContent["pages"];
+  getPages(path: string, options?: GetPagesOptions): SleekSiteContent["pages"];
   getPage(path: string): Page | null;
   getEntry(handle: string): Entry | Entry[] | null;
   getSlugs(path: string): string[];
@@ -45,7 +46,7 @@ export interface SleekClient {
 
 export interface SleekAsyncClient {
   getContent(query?: string): Promise<SleekSiteContent>;
-  getPages(path: string): Promise<SleekSiteContent["pages"]>;
+  getPages(path: string, options?: GetPagesOptions): Promise<SleekSiteContent["pages"]>;
   getPage(path: string): Promise<Page | null>;
   getEntry(handle: string): Promise<Entry | Entry[] | null>;
   getSlugs(path: string): Promise<string[]>;

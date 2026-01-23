@@ -1,7 +1,7 @@
-import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter } from "./types";
+import type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter, GetPagesOptions } from "./types";
 import { fetchSiteContent, fetchEnvTag, applyJmes, extractSlugs, filterPagesByPath, getUrl } from "./lib";
 
-export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter };
+export type { SleekSiteContent, SleekClient, SleekAsyncClient, ClientOptions, Page, Options, Image, Entry, SyncCacheAdapter, AsyncCacheAdapter, GetPagesOptions };
 
 // Default in-memory cache
 class MemoryCache implements SyncCacheAdapter {
@@ -24,12 +24,12 @@ export async function createSyncClient(options: ClientOptions): Promise<SleekCli
     return applyJmes(data, query);
   }
 
-  function getPages(path: string): SleekSiteContent["pages"] {
+  function getPages(path: string, options?: GetPagesOptions): SleekSiteContent["pages"] {
     if (!path) {
       throw new Error("[SleekCMS] path is required for getPages");
     }
 
-    return filterPagesByPath(data.pages, path);
+    return filterPagesByPath(data.pages, path, options);
   }
 
   function getPage(path: string): Page | null {
@@ -103,12 +103,11 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     return await fetchSiteContent({ siteToken, env, search, lang, cache, resolveEnv }) as SleekSiteContent;
   }
 
-  async function getPages(path: string): Promise<SleekSiteContent["pages"]> {
-    if (syncClient) return syncClient.getPages(path);
+  async function getPages(path: string, options?: GetPagesOptions): Promise<SleekSiteContent["pages"]> {
+    if (syncClient) return syncClient.getPages(path, options);
 
     const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, resolveEnv }) as SleekSiteContent["pages"];
-    if (!path) return pages;
-    else return filterPagesByPath(pages, path);
+    return filterPagesByPath(pages, path, options);
   }
 
   async function getPage(path: string): Promise<Page | null> {
