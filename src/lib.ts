@@ -144,10 +144,8 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
             }
             // Cache is valid or no expiry set, return the data
             return cachedData.data;
-          } else {
-            // Old format without timestamp (backward compatible)
-            return cachedData;
           }
+          // Old format without timestamp, fall through to refetch
         } catch (e) {
           // Invalid cache data, continue to fetch
         }
