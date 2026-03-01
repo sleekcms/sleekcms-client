@@ -88,7 +88,7 @@ export async function createSyncClient(options: ClientOptions): Promise<SleekCli
 }
 
 export function createAsyncClient(options: ClientOptions): SleekAsyncClient | any {
-  const { siteToken, env = 'latest', resolveEnv, lang } = options;
+  const { siteToken, env = 'latest', resolveEnv, lang, cacheMinutes } = options;
   const cache = options.cache ?? new MemoryCache();
 
   let syncClient: SleekClient | null = null;
@@ -100,20 +100,20 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     if (syncClient) return syncClient.getContent(search);
     if (!search) return null; // unlikely
     
-    return await fetchSiteContent({ siteToken, env, search, lang, cache, resolveEnv }) as SleekSiteContent;
+    return await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, resolveEnv }) as SleekSiteContent;
   }
 
   async function getPages(path: string, options?: GetPagesOptions): Promise<SleekSiteContent["pages"]> {
     if (syncClient) return syncClient.getPages(path, options);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, resolveEnv }) as SleekSiteContent["pages"];
+    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, resolveEnv }) as SleekSiteContent["pages"];
     return filterPagesByPath(pages, path, options);
   }
 
   async function getPage(path: string): Promise<Page | null> {
     if (syncClient) return syncClient.getPage(path);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, resolveEnv }) as SleekSiteContent["pages"];
+    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, resolveEnv }) as SleekSiteContent["pages"];
     const page = pages?.find((p: any) => {
       const pth = typeof p._path === "string" ? p._path : "";
       return pth === path;
@@ -126,27 +126,27 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     if (syncClient) return syncClient.getEntry(handle);
 
     let search = `entries.${handle}`;
-    return await fetchSiteContent({ siteToken, env, search, lang, cache, resolveEnv }) as Entry | Entry[] | null;
+    return await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, resolveEnv }) as Entry | Entry[] | null;
   }
 
   async function getSlugs(path: string): Promise<string[]> {
     if (syncClient) return syncClient.getSlugs(path);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, resolveEnv }) as SleekSiteContent["pages"];
+    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, resolveEnv }) as SleekSiteContent["pages"];
     return extractSlugs(pages, path);
   }
 
   async function getImage(name: string): Promise<Image | null> {
     if (syncClient) return syncClient.getImage(name);
 
-    const images = await fetchSiteContent({ siteToken, env, search: 'images', lang, cache, resolveEnv }) as Record<string, Image>;
+    const images = await fetchSiteContent({ siteToken, env, search: 'images', lang, cache, cacheMinutes, resolveEnv }) as Record<string, Image>;
     return images ? images[name] : null;
   }
 
   async function getOptions(name: string): Promise<Options | null> {
     if (syncClient) return syncClient.getOptions(name);
 
-    const options = await fetchSiteContent({ siteToken, env, search: 'options', lang, cache, resolveEnv }) as Record<string, Options>;
+    const options = await fetchSiteContent({ siteToken, env, search: 'options', lang, cache, cacheMinutes, resolveEnv }) as Record<string, Options>;
     const optionSet = options[name];
     return Array.isArray(optionSet) ? optionSet : null;
   }
