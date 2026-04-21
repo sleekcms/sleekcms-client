@@ -28,6 +28,9 @@ export interface AsyncCacheAdapter {
 export interface ClientOptions {
   siteToken: string;
   env?: string; // site env / alias
+  /** Resolve env alias to version tag to bypass CDN cache. Adds some latency. */
+  flush?: boolean;
+  /** @deprecated Use `flush` instead. */
   resolveEnv?: boolean;
   lang?: string;
   cache?: SyncCacheAdapter | AsyncCacheAdapter;

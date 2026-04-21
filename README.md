@@ -101,7 +101,7 @@ const slugs = client.getSlugs('/blog');
 ```typescript
 const client = createAsyncClient({
   siteToken: 'your-site-token',
-  resolveEnv: true  // optional: resolve env to version tag to invalidate CDN cache if required
+  flush: true  // optional: resolve env to version tag to invalidate CDN cache if required
 });
 
 // All methods are async
@@ -120,7 +120,7 @@ const posts = await client.getPages('/blog');
 |--------|------|---------|-------------|
 | `siteToken` | `string` | required | Your site token from SleekCMS |
 | `env` | `string` | `'latest'` | Environment/alias name |
-| `resolveEnv` | `boolean` | `false` | Env is an alias to version. This flag resolves env to version tag, so as to bypass CDN cache. Add's some latency.|
+| `flush` | `boolean` | `false` | Resolve env alias to version tag to bypass CDN cache. Adds some latency. |
 | `lang` | `string` | - | Language code for internationalized content |
 | `cache` | `SyncCacheAdapter \| AsyncCacheAdapter` | In-memory cache | Custom cache adapter for storing fetched content |
 | `cacheMinutes` | `number` | - | Cache expiration time in minutes. If not set, cache never expires |
@@ -337,7 +337,7 @@ import { createAsyncClient } from '@sleekcms/client';
 
 const client = createAsyncClient({
   siteToken: process.env.SLEEKCMS_SITE_TOKEN,
-  resolveEnv: true
+  flush: true
 });
 
 export async function load() {

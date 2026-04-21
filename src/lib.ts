@@ -58,10 +58,11 @@ export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: str
 }
 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
-  const { siteToken, env = 'latest', resolveEnv = false, search, lang, cache, cacheMinutes } = options;
+  const { siteToken, env = 'latest', search, lang, cache, cacheMinutes } = options;
+  const flush = options.flush ?? options.resolveEnv ?? false;
   
   let url = getUrl({siteToken, env, search, lang});
-  if (resolveEnv) {
+  if (flush) {
     const cacheKey = `${siteToken}:${env}`;
     let tag = envTagCache.get(cacheKey);
     
