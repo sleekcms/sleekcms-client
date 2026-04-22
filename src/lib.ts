@@ -16,7 +16,7 @@ function isDevToken(token: string): boolean {
 function getBaseUrl(token: string, devEnv: string): string {
   let [env, siteId, ...rest] = token.split("-");
   if (devEnv === "production") return `https://pub.sleekcms.com/${siteId}`;
-  else if (devEnv === "development") return `https://pub.sleekcms.net/${siteId}`;
+  else if (devEnv === "development") return `https://pub.sleekcms.dev/${siteId}`;
   else if (devEnv === "localhost") return `http://localhost:9001/localhost/${siteId}`;
   else throw new Error(`[SleekCMS] Unknown devEnv: ${devEnv}`);
 }
@@ -35,8 +35,8 @@ export function getUrl({siteToken, env, search, lang, devEnv = "production"}: {s
   return url.toString();
 }
 
-export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: string}) : Promise<string> {
-  const url = getUrl({siteToken, env});
+export async function fetchEnvTag({siteToken, env, devEnv}: {siteToken: string; env: string; devEnv?: string}) : Promise<string> {
+  const url = getUrl({siteToken, env, devEnv});
   try {
     let res = await fetch(url, {
       method: "POST",
@@ -58,21 +58,21 @@ export async function fetchEnvTag({siteToken, env}: {siteToken: string; env: str
 }
 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
-  const { siteToken, env = 'latest', search, lang, cache, cacheMinutes } = options;
+  const { siteToken, env = 'latest', search, lang, cache, cacheMinutes, devEnv } = options;
   const flush = options.flush ?? options.resolveEnv ?? false;
   
-  let url = getUrl({siteToken, env, search, lang});
+  let url = getUrl({siteToken, env, search, lang, devEnv});
   if (flush) {
     const cacheKey = `${siteToken}:${env}`;
     let tag = envTagCache.get(cacheKey);
     
     try {
       if (!tag) {
-        tag = await fetchEnvTag({siteToken, env});
+        tag = await fetchEnvTag({siteToken, env, devEnv});
         envTagCache.set(cacheKey, tag);
       }
       
-      url = getUrl({siteToken, env: tag, search, lang});      
+      url = getUrl({siteToken, env: tag, search, lang, devEnv});      
     } catch (error) {
       console.warn("[SleekCMS] Failed to resolve env tag, using cached content instead.");
     }

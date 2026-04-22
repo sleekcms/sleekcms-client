@@ -32,6 +32,8 @@ export interface ClientOptions {
   flush?: boolean;
   /** @deprecated Use `flush` instead. */
   resolveEnv?: boolean;
+  /** @internal */
+  devEnv?: string;
   lang?: string;
   cache?: SyncCacheAdapter | AsyncCacheAdapter;
   cacheMinutes?: number; // cache expiration in minutes
