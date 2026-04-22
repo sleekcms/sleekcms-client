@@ -26,11 +26,12 @@ export function applyJmes(data: unknown, query?: string): any {
   return jmespath.search(data, query);
 }
 
-export function getUrl({siteToken, env, search, lang, devEnv = "production"}: {siteToken: string; env?: string; search?: string; devEnv?: string, lang?: string}): string {
+export function getUrl({siteToken, env, search, lang, devEnv = "production", meta}: {siteToken: string; env?: string; search?: string; devEnv?: string, lang?: string, meta?: string[]}): string {
   const baseUrl = getBaseUrl(siteToken, devEnv).replace(/\/$/, "");
   const url = new URL(`${baseUrl}/${env ?? 'latest'}`);
   if (search) url.searchParams.append("search", search);
   if (lang) url.searchParams.append("lang", lang);
+  if (meta && meta.length > 0) url.searchParams.append("meta", meta.join(","));
 
   return url.toString();
 }
@@ -60,8 +61,9 @@ export async function fetchEnvTag({siteToken, env, devEnv}: {siteToken: string; 
 export async function fetchSiteContent(options: ClientOptions & { search?: string }): Promise<any> {
   const { siteToken, env = 'latest', search, lang, cache, cacheMinutes, devEnv } = options;
   const flush = options.flush ?? options.resolveEnv ?? false;
-  
-  let url = getUrl({siteToken, env, search, lang, devEnv});
+  const meta = typeof options.meta === 'string' ? options.meta.split(',').map(s => s.trim()).filter(Boolean) : options.meta;
+
+  let url = getUrl({siteToken, env, search, lang, devEnv, meta});
   if (flush) {
     const cacheKey = `${siteToken}:${env}`;
     let tag = envTagCache.get(cacheKey);
@@ -72,7 +74,7 @@ export async function fetchSiteContent(options: ClientOptions & { search?: strin
         envTagCache.set(cacheKey, tag);
       }
       
-      url = getUrl({siteToken, env: tag, search, lang, devEnv});      
+      url = getUrl({siteToken, env: tag, search, lang, devEnv, meta});      
     } catch (error) {
       console.warn("[SleekCMS] Failed to resolve env tag, using cached content instead.");
     }
