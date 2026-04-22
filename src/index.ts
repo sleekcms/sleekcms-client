@@ -18,7 +18,10 @@ class MemoryCache implements SyncCacheAdapter {
 
 export async function createSyncClient(options: ClientOptions): Promise<SleekClient> {
   const cache = options.cache ?? new MemoryCache();
-  const data = await fetchSiteContent({ ...options, cache }) as SleekSiteContent;
+  let meta: string | undefined  = Array.isArray(options.meta) ? options.meta.join(',') : options.meta;
+  if (meta) meta = meta.replace(/\s/g, ''); // remove whitespace
+                  
+  const data = await fetchSiteContent({ ...options, cache, meta }) as SleekSiteContent;
 
   function getContent(query?: string): SleekSiteContent {
     return applyJmes(data, query);
@@ -88,7 +91,10 @@ export async function createSyncClient(options: ClientOptions): Promise<SleekCli
 }
 
 export function createAsyncClient(options: ClientOptions): SleekAsyncClient | any {
-  const { siteToken, env = 'latest', lang, cacheMinutes, devEnv, meta } = options;
+  const { siteToken, env = "latest", lang, cacheMinutes, devEnv } = options;
+  let meta: string | undefined = Array.isArray(options.meta) ? options.meta.join(",") : options.meta;
+  if (meta) meta = meta.replace(/\s/g, ""); // remove whitespace
+
   const flush = options.flush ?? options.resolveEnv ?? false;
   const cache = options.cache ?? new MemoryCache();
 
@@ -100,21 +106,21 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     }
     if (syncClient) return syncClient.getContent(search);
     if (!search) return null; // unlikely
-    
-    return await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, flush, devEnv, meta }) as SleekSiteContent;
+
+    return (await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, flush, devEnv, meta })) as SleekSiteContent;
   }
 
   async function getPages(path: string, options?: GetPagesOptions): Promise<SleekSiteContent["pages"]> {
     if (syncClient) return syncClient.getPages(path, options);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, flush, devEnv, meta }) as SleekSiteContent["pages"];
+    const pages = (await fetchSiteContent({ siteToken, env, search: "pages", lang, cache, cacheMinutes, flush, devEnv, meta })) as SleekSiteContent["pages"];
     return filterPagesByPath(pages, path, options);
   }
 
   async function getPage(path: string): Promise<Page | null> {
     if (syncClient) return syncClient.getPage(path);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, flush, devEnv, meta }) as SleekSiteContent["pages"];
+    const pages = (await fetchSiteContent({ siteToken, env, search: "pages", lang, cache, cacheMinutes, flush, devEnv, meta })) as SleekSiteContent["pages"];
     const page = pages?.find((p: any) => {
       const pth = typeof p._path === "string" ? p._path : "";
       return pth === path;
@@ -127,39 +133,38 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     if (syncClient) return syncClient.getEntry(handle);
 
     let search = `entries.${handle}`;
-    return await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, flush, devEnv, meta }) as Entry | Entry[] | null;
+    return (await fetchSiteContent({ siteToken, env, search, lang, cache, cacheMinutes, flush, devEnv, meta })) as Entry | Entry[] | null;
   }
 
   async function getSlugs(path: string): Promise<string[]> {
     if (syncClient) return syncClient.getSlugs(path);
 
-    const pages = await fetchSiteContent({ siteToken, env, search: 'pages', lang, cache, cacheMinutes, flush, devEnv, meta }) as SleekSiteContent["pages"];
+    const pages = (await fetchSiteContent({ siteToken, env, search: "pages", lang, cache, cacheMinutes, flush, devEnv, meta })) as SleekSiteContent["pages"];
     return extractSlugs(pages, path);
   }
 
   async function getImage(name: string): Promise<Image | null> {
     if (syncClient) return syncClient.getImage(name);
 
-    const images = await fetchSiteContent({ siteToken, env, search: 'images', lang, cache, cacheMinutes, flush, devEnv, meta }) as Record<string, Image>;
+    const images = (await fetchSiteContent({ siteToken, env, search: "images", lang, cache, cacheMinutes, flush, devEnv, meta })) as Record<string, Image>;
     return images ? images[name] : null;
   }
 
   async function getOptions(name: string): Promise<Options | null> {
     if (syncClient) return syncClient.getOptions(name);
 
-    const options = await fetchSiteContent({ siteToken, env, search: 'options', lang, cache, cacheMinutes, flush, devEnv, meta }) as Record<string, Options>;
+    const options = (await fetchSiteContent({ siteToken, env, search: "options", lang, cache, cacheMinutes, flush, devEnv, meta })) as Record<string, Options>;
     const optionSet = options[name];
     return Array.isArray(optionSet) ? optionSet : null;
   }
 
   async function _getEnvTag(): Promise<string> {
-    let resp = await fetchEnvTag({siteToken, env, devEnv});
+    let resp = await fetchEnvTag({ siteToken, env, devEnv });
     return resp;
   }
 
   function _getFetchUrl(): string {
-    const normalizedMeta = typeof meta === 'string' ? meta.split(',').map(s => s.trim()).filter(Boolean) : meta;
-    return getUrl({ ...options, meta: normalizedMeta });
+    return getUrl({ ...options, meta });
   }
 
   return {
@@ -171,6 +176,6 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
     getImage,
     getOptions,
     _getFetchUrl,
-    _getEnvTag
-  }
+    _getEnvTag,
+  };
 }

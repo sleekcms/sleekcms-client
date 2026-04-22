@@ -37,7 +37,7 @@ export interface ClientOptions {
   lang?: string;
   cache?: SyncCacheAdapter | AsyncCacheAdapter;
   cacheMinutes?: number; // cache expiration in minutes
-  meta?: string[] | string;
+  meta?: string[] | string | undefined;
 }
 
 export interface SleekClient {
