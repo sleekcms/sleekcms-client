@@ -535,4 +535,62 @@ describe("Custom Cache Adapters", () => {
     const result = client.getContent() as any;
     expect(result).toEqual(mockSiteContent); // Should get data from fetch
   });
+
+  it("should skip cache entirely when cache: false is passed to createSyncClient", async () => {
+    fetchSpy
+      .mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ fresh: "data" }) });
+
+    const client1 = await createSyncClient({ siteToken: "prod-site123", cache: false, flush: false });
+    expect(client1.getContent()).toEqual(mockSiteContent);
+
+    // Second client with cache: false should fetch again, not reuse anything
+    const client2 = await createSyncClient({ siteToken: "prod-site123", cache: false, flush: false });
+    expect(client2.getContent()).toEqual({ fresh: "data" });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should skip cache entirely when cache: null is passed to createSyncClient", async () => {
+    fetchSpy
+      .mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ fresh: "data" }) });
+
+    const client1 = await createSyncClient({ siteToken: "prod-site123", cache: null, flush: false });
+    expect(client1.getContent()).toEqual(mockSiteContent);
+
+    const client2 = await createSyncClient({ siteToken: "prod-site123", cache: null, flush: false });
+    expect(client2.getContent()).toEqual({ fresh: "data" });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should skip cache entirely when cache: false is passed to createAsyncClient", async () => {
+    const client = createAsyncClient({ siteToken: "prod-site123", cache: false, flush: false });
+
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
+    let result = await client.getPages("/blog");
+    expect(result?.length).toBe(2);
+
+    // Second call should fetch again, not use cache
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    result = await client.getPages("/blog");
+    expect(result?.length).toBe(0);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should skip cache entirely when cache: null is passed to createAsyncClient", async () => {
+    const client = createAsyncClient({ siteToken: "prod-site123", cache: null, flush: false });
+
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => mockSiteContent.pages });
+    let result = await client.getPages("/blog");
+    expect(result?.length).toBe(2);
+
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    result = await client.getPages("/blog");
+    expect(result?.length).toBe(0);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });

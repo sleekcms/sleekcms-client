@@ -35,7 +35,7 @@ export interface ClientOptions {
   /** @internal */
   devEnv?: string;
   lang?: string;
-  cache?: SyncCacheAdapter | AsyncCacheAdapter;
+  cache?: SyncCacheAdapter | AsyncCacheAdapter | null | false;
   cacheMinutes?: number; // cache expiration in minutes
   meta?: string[] | string | undefined;
 }

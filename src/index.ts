@@ -17,7 +17,7 @@ class MemoryCache implements SyncCacheAdapter {
 }
 
 export async function createSyncClient(options: ClientOptions): Promise<SleekClient> {
-  const cache = options.cache ?? new MemoryCache();
+  const cache = options.cache === undefined ? new MemoryCache() : (options.cache || null);
   let meta: string | undefined  = Array.isArray(options.meta) ? options.meta.join(',') : options.meta;
   if (meta) meta = meta.replace(/\s/g, ''); // remove whitespace
                   
@@ -96,7 +96,7 @@ export function createAsyncClient(options: ClientOptions): SleekAsyncClient | an
   if (meta) meta = meta.replace(/\s/g, ""); // remove whitespace
 
   const flush = options.flush ?? options.resolveEnv ?? false;
-  const cache = options.cache ?? new MemoryCache();
+  const cache = options.cache === undefined ? new MemoryCache() : (options.cache || null);
 
   let syncClient: SleekClient | null = null;
 
